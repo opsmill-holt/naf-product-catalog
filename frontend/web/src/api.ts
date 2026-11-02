@@ -87,7 +87,19 @@ export async function fetchCatalog(): Promise<Catalog> {
 export interface SubmissionResult {
   ok: boolean
   reference?: string
+  analysisId?: string // set when the service runs the stack review on a submitted stack
   message?: string
+}
+
+export interface Analysis {
+  status: 'pending' | 'done' | 'failed'
+  text: string | null
+}
+
+export async function fetchAnalysis(id: string): Promise<Analysis> {
+  const response = await fetch(`/api/analyses/${encodeURIComponent(id)}`)
+  if (!response.ok) return { status: 'failed', text: null }
+  return response.json()
 }
 
 export function submitProduct(body: unknown): Promise<SubmissionResult> {
@@ -115,7 +127,7 @@ async function post(path: string, body: unknown): Promise<SubmissionResult> {
   })
   const data = await response.json().catch(() => ({}))
   if (response.ok) {
-    return { ok: true, reference: data.reference }
+    return { ok: true, reference: data.reference, analysisId: data.analysis_id }
   }
   const detail = data.detail
   const message = Array.isArray(detail)

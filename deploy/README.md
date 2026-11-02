@@ -172,6 +172,27 @@ After a change to `checks/`, `queries/` or `.infrahub.yml`, also run **Import la
 the repository in the deployed Infrahub. Open proposed changes keep the checks of the commit their
 branch was created from: rebase them to run the new checks.
 
+## Switching on the stack review
+
+The catalog service can run the `stack-review` skill on each submitted stack and show the answer to
+the visitor (see `specs/005-catalog-web-app/contracts/api.md`). It is off until an Anthropic API key
+is set.
+
+1. In the Anthropic Console, create an API key, ideally in a workspace with a monthly spend limit:
+   anyone can submit a stack without a login, and each review is a paid model call (at most 0.50 USD,
+   within the submission limits below).
+2. On the machine, add it to `deploy/.env` and restart the service:
+
+   ```bash
+   cd /opt/catalog
+   sudo nano deploy/.env   # ANTHROPIC_API_KEY=sk-ant-...
+   sudo docker compose -f docker-compose.yml -f deploy/docker-compose.gcp.yml --env-file deploy/.env up -d catalog-api
+   ```
+
+`STACK_ANALYSIS_MODEL` in `deploy/.env` changes the model (default `claude-sonnet-5`). To change the
+skill, edit `frontend/api/skill_home/.claude/skills/stack-review/SKILL.md`, push, and deploy as
+above. Remove the key to switch the review off.
+
 ## Changing the submission limits
 
 Set `SUBMISSIONS_PER_ADDRESS_PER_HOUR` and `SUBMISSIONS_PER_HOUR` in `deploy/.env`, then restart

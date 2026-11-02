@@ -7,6 +7,7 @@ Base path `/api`. JSON only. No authentication, so the service exposes nothing e
 | GET | `/api/catalog` | The catalog on `main` ([data-model.md](../data-model.md)) | `200`, `503` when Infrahub is unreachable |
 | POST | `/api/submissions` | Submit a product | `201`, `409`, `422`, `502`, `503` |
 | POST | `/api/stacks` | Submit the products one visitor uses (their automation stack) | `201`, `422`, `429`, `502` |
+| GET | `/api/analyses/{id}` | The stack-review skill's answer for a submitted stack | `200`, `404` |
 | GET | `/api/health` | Liveness for deployment | `200` |
 
 Configuration (environment variables, never committed):
@@ -33,7 +34,7 @@ The service creates a branch named `submission-<date>-<random>` with one `Catalo
 record (products in `products`, the blocks without a tool in `blocks_without_tool`) and opens a proposed change named "Automation stack: <organization, else name, else
 anonymous> (<n> products)". Maintainers merge it after review. Responses:
 
-- `201` `{"reference": "<branch name>"}`;
+- `201` `{"reference": "<branch name>"}`, plus `"analysis_id"` when the stack review is switched on;
 - `422` when a product or block is not in the catalog on `main`, when `no_tool_blocks` names a
   block the products cover, or when the body is not valid;
 - `429` over the submission limit, which `/api/submissions` and `/api/stacks` share;
@@ -41,4 +42,20 @@ anonymous> (<n> products)". Maintainers merge it after review. Responses:
 
 The web app keeps the visitor's marked products in local storage (`catalog.myTools`) until they
 submit them. Stacks are not part of `/api/catalog`.
+
+## GET /api/analyses/{id}
+
+When `ANTHROPIC_API_KEY` is set, the service runs the `stack-review` skill
+(`frontend/api/skill_home/.claude/skills/stack-review/SKILL.md`) on each submitted stack with the
+Claude Agent SDK, after the branch and proposed change exist. The skill gets the stack's products,
+their coverage and the blocks' MUST and SHOULD requirements, never the name, email or organization.
+The answer is stored in the stack record's `analysis` field on the submission branch.
+
+The page polls with the random `analysis_id` from the submission. Responses:
+
+- `200` `{"status": "pending" | "done" | "failed", "text": "<answer>" | null}`;
+- `404` for an unknown ID; answers are kept in the service's memory for an hour.
+
+A failed or slow review (over 90 seconds or 0.50 USD) is reported as `failed`; the stack is saved
+either way.
 

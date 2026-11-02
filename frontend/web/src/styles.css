@@ -1694,3 +1694,28 @@ button:disabled {
     bottom: 0.75rem;
   }
 }
+
+.stack-analysis {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.stack-analysis h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The review is plain text from the skill: keep its line breaks, never render it as HTML. */
+.stack-analysis-text {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

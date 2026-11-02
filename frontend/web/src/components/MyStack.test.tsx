@@ -94,4 +94,31 @@ describe('MyStack', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
     expect(JSON.parse(fetch.mock.calls[0][1].body).no_tool_blocks).toEqual([])
   })
+
+  it('shows the review of the stack once the service has it', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ status: 'pending', text: null }) })
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: 'done', text: 'Your tools cover Collector.' }) })
+    vi.stubGlobal('fetch', fetch)
+    render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    expect(await screen.findByText(/Reviewing your stack/)).toBeTruthy()
+    expect(await screen.findByText('Your tools cover Collector.', {}, { timeout: 8000 })).toBeTruthy()
+    expect(fetch).toHaveBeenCalledWith('/api/analyses/abc')
+  }, 10_000)
+
+  it('says the review is not available when it fails, and shows no review section when there is none', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: 'failed', text: null }) })
+    vi.stubGlobal('fetch', fetch)
+    render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    expect(await screen.findByText(/review is not available/, {}, { timeout: 5000 })).toBeTruthy()
+  }, 10_000)
 })

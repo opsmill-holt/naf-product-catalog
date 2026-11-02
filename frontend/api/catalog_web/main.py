@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from infrahub_sdk.exceptions import Error as InfrahubError
 
+from catalog_web import analysis
 from catalog_web.catalog import CatalogCache
 from catalog_web.infrahub import get_client
 from catalog_web.limits import SubmissionLimit
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Catalog web service", docs_url=None, redoc_url=None, openapi_url=None)
 cache = CatalogCache()
 limit = SubmissionLimit()
+analyses = analysis.Analyses()
 
 UNAVAILABLE = "The catalog is not available right now. Try again later."
 TOO_MANY = "Too many submissions were sent in the last hour. Nothing was created. Please try again later."
@@ -73,4 +75,21 @@ async def stacks(stack: Stack, request: Request) -> dict[str, str]:
             status_code=502,
             content={"detail": "Your stack was not saved. Nothing was created. Please try again."},
         )
-    return {"reference": reference}
+    response = {"reference": reference}
+    if analysis.enabled():
+        # The stack is saved; a failure to start the review must not turn the submission into an error.
+        try:
+            catalog_data = await cache.get(get_client())
+            facts = analysis.build_input(catalog_data, stack.products, stack.no_tool_blocks)
+            response["analysis_id"] = analyses.start(get_client(), reference, facts)
+        except Exception:
+            logger.exception("could not start the stack review for %s", reference)
+    return response
+
+
+@app.get("/api/analyses/{analysis_id}")
+async def stack_analysis(analysis_id: str) -> dict[str, str | None]:
+    item = analyses.get(analysis_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="No review with this ID. Reviews are kept for an hour.")
+    return {"status": item.status, "text": item.text}

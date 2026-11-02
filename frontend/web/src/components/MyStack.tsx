@@ -2,9 +2,35 @@
 // Name, email and organization are optional; the service stores the stack on an Infrahub branch with
 // a proposed change (frontend/api/catalog_web/stacks.py).
 
-import { useState, type CSSProperties, type FormEvent } from 'react'
-import { submitStack, type Catalog, type SubmissionResult } from '../api'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
+import { fetchAnalysis, submitStack, type Analysis, type Catalog, type SubmissionResult } from '../api'
 import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
+
+const POLL_MS = 3000
+const GIVE_UP_MS = 120_000
+
+// Asks the service for the stack review every few seconds until it is done or failed, or two minutes pass.
+function useAnalysis(id: string | undefined): Analysis | null {
+  const [analysis, setAnalysis] = useState<Analysis | null>(null)
+  useEffect(() => {
+    if (!id) return
+    let stopped = false
+    const began = Date.now()
+    const poll = async () => {
+      const next = await fetchAnalysis(id).catch((): Analysis => ({ status: 'failed', text: null }))
+      if (stopped) return
+      const gaveUp = next.status === 'pending' && Date.now() - began > GIVE_UP_MS
+      setAnalysis(gaveUp ? { status: 'failed', text: null } : next)
+      if (next.status === 'pending' && !gaveUp) timer = window.setTimeout(poll, POLL_MS)
+    }
+    let timer = window.setTimeout(poll, POLL_MS)
+    return () => {
+      stopped = true
+      window.clearTimeout(timer)
+    }
+  }, [id])
+  return id ? (analysis ?? { status: 'pending', text: null }) : null
+}
 
 interface Props {
   catalog: Catalog
@@ -19,6 +45,7 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
   const [ticked, setTicked] = useState<string[]>([])
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<SubmissionResult | null>(null)
+  const analysis = useAnalysis(result?.ok ? result.analysisId : undefined)
 
   if (!tools.length && !open) return null
 
@@ -90,6 +117,16 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                 <p role="status">
                   Thank you. Your stack was sent as {result.reference}. The catalog maintainers review it before it is stored.
                 </p>
+                {analysis && (
+                  <section className="stack-analysis" aria-live="polite" aria-label="Review of my stack">
+                    <h3>Review of your stack</h3>
+                    {analysis.status === 'pending' && <p className="stack-note">Reviewing your stack. This can take up to a minute…</p>}
+                    {analysis.status === 'done' && <p className="stack-analysis-text">{analysis.text}</p>}
+                    {analysis.status === 'failed' && (
+                      <p className="stack-note">The review is not available right now. Your stack was still sent.</p>
+                    )}
+                  </section>
+                )}
                 <button type="button" className="button" onClick={close}>
                   Done
                 </button>

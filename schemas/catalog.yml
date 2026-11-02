@@ -482,6 +482,11 @@ nodes:
         optional: true
         description: As the visitor typed it; not verified.
         order_weight: 1400
+      - name: analysis
+        kind: TextArea
+        optional: true
+        description: The stack-review skill's answer, written by the catalog web service.
+        order_weight: 1500
     relationships:
       - name: products
         peer: CatalogProduct

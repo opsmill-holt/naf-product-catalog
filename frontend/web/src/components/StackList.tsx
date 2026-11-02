@@ -1,8 +1,10 @@
-// The tools in the visitor's stack, in the top-left corner of the graph. Clicking a name opens the
-// product; × removes it. The header collapses the list.
+// The tools in the visitor's stack, in the top-left corner of the graph. Each tool has a dot in the
+// colour of every block it covers: filled for full coverage, hollow for partial. Clicking a name opens
+// the product; × removes it. The header collapses the list.
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import type { Product } from '../api'
+import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
 import { Logo } from '../graph/Logo'
 
 interface Props {
@@ -27,7 +29,20 @@ export function StackList({ products, onOpen, onRemove }: Props) {
             <li key={product.id}>
               <button type="button" className="stack-panel-item" onClick={() => onOpen(product)} title={product.full_name}>
                 <Logo fullName={product.full_name} name={product.name} />
-                <span>{product.name}</span>
+                <span className="stack-panel-name">{product.name}</span>
+                <span className="stack-panel-blocks">
+                  {[...product.claims]
+                    .sort((a, b) => byFrameworkOrder(a.block, b.block))
+                    .map((claim) => (
+                      <span
+                        key={claim.block}
+                        className={`block-dot block-dot-${claim.extent}`}
+                        style={{ '--block-color': blockStyle(claim.block).color } as CSSProperties}
+                        title={`${claim.block}, ${claim.extent} coverage`}
+                        aria-label={`${claim.block}, ${claim.extent} coverage`}
+                      />
+                    ))}
+                </span>
               </button>
               <button
                 type="button"

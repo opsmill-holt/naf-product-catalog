@@ -6,7 +6,7 @@ import { StackList } from './StackList'
 
 afterEach(cleanup)
 
-const products = [product('a', 'active', []), product('c', 'active', [])]
+const products = [product('a', 'active', [['Collector', 'full'], ['Observability', 'partial']]), product('c', 'active', [])]
 
 describe('StackList', () => {
   it('shows nothing when the stack is empty', () => {
@@ -29,5 +29,12 @@ describe('StackList', () => {
     render(<StackList products={products} onOpen={() => {}} onRemove={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: /My stack/ }))
     expect(screen.queryByTitle('Publisher a')).toBeNull()
+  })
+
+  it('shows a dot for each block a tool covers, in framework order, filled for full coverage', () => {
+    render(<StackList products={products} onOpen={() => {}} onRemove={() => {}} />)
+    const dots = screen.getByTitle('Publisher a').querySelectorAll('.block-dot')
+    expect([...dots].map((dot) => dot.getAttribute('aria-label'))).toEqual(['Observability, partial coverage', 'Collector, full coverage'])
+    expect(dots[1].classList.contains('block-dot-full')).toBe(true)
   })
 })

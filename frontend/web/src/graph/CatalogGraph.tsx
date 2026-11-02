@@ -26,6 +26,8 @@ const MORPH_MS = 550
 // Width the block panel (.details) covers on the right of the canvas, with its margins.
 const PANEL_SPACE = 432
 const FRAME_PADDING = 32
+// Height kept free above the diagram for the view buttons in the top-left corner of the canvas.
+const TOOLBAR_SPACE = 44
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -57,11 +59,11 @@ function frameworkViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box
   const rect = canvas.current?.getBoundingClientRect()
   if (!rect) return null
   const width = rect.width - (panelOpen && rect.width > PANEL_SPACE * 2 ? PANEL_SPACE : 0) - 2 * FRAME_PADDING
-  const height = rect.height - 2 * FRAME_PADDING
+  const height = rect.height - 2 * FRAME_PADDING - TOOLBAR_SPACE
   const zoom = Math.min(width / bounds.width, height / bounds.height)
   return {
     x: FRAME_PADDING + (width - bounds.width * zoom) / 2 - bounds.x * zoom,
-    y: FRAME_PADDING + (height - bounds.height * zoom) / 2 - bounds.y * zoom,
+    y: FRAME_PADDING + TOOLBAR_SPACE + (height - bounds.height * zoom) / 2 - bounds.y * zoom,
     zoom,
   }
 }

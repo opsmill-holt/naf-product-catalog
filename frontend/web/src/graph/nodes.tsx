@@ -75,10 +75,20 @@ export function ProductNode({ data }: NodeProps<ProductNodeType>) {
         <span className="graph-product-name">{product.name}</span>
         {product.status !== 'active' && <span className="graph-product-status">{STATUS_LABELS[product.status]}</span>}
       </span>
-      {data.mine && (
-        <span className="graph-product-mine" aria-label="In my stack">
-          ✓
-        </span>
+      {data.onToggleMine && (
+        // nodrag and stopPropagation: the button adds or removes the product without moving it or opening its panel.
+        <button
+          type="button"
+          className={`graph-product-add nodrag${data.mine ? ' added' : ''}`}
+          aria-label={data.mine ? `Remove ${product.full_name} from my stack` : `Add ${product.full_name} to my stack`}
+          title={data.mine ? 'In my stack. Click to remove' : 'Add to my stack'}
+          onClick={(event) => {
+            event.stopPropagation()
+            data.onToggleMine?.()
+          }}
+        >
+          {data.mine ? '✓' : '+'}
+        </button>
       )}
     </div>
   )

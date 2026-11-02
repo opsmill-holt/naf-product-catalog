@@ -11,6 +11,7 @@ import { CatalogGraph, type View } from './graph/CatalogGraph'
 import { slugify } from './graph/logos'
 import { MadeBy } from './components/MadeBy'
 import { MyStack } from './components/MyStack'
+import { StackList } from './components/StackList'
 import { useMyTools } from './myTools'
 import { SubmitForm } from './submit/SubmitForm'
 
@@ -136,10 +137,10 @@ export default function App() {
           <div className="view-row">
             <p className="hint">
               {view === 'graph'
-                ? 'Drag to move, scroll to zoom. Click a product or a building block to highlight its links. Solid lines are full coverage, dashed lines partial coverage. To submit the tools you use, open each one and click “I use this”.'
+                ? 'Drag to move, scroll to zoom. Click a product or a building block to highlight its links. Solid lines are full coverage, dashed lines partial coverage. Click + on a product to add it to the tools you use, then submit your stack.'
                 : 'The building blocks as the framework diagram arranges them. Click a block to view its MUST and SHOULD requirements.'}
             </p>
-            <MyStack tools={stack} onRemove={myTools.toggle} onClear={myTools.clear} />
+            <MyStack catalog={catalog.data} tools={stack} onRemove={myTools.toggle} onClear={myTools.clear} />
             <div className="view-toggle" role="group" aria-label="View">
               <button
                 type="button"
@@ -183,6 +184,14 @@ export default function App() {
                 selectedBlock={frameworkBlock}
                 onSelectBlock={setFrameworkBlock}
                 myTools={stack}
+                onToggleTool={myTools.toggle}
+              />
+            )}
+            {view === 'graph' && (
+              <StackList
+                products={stack.map((tool) => catalog.data.products.find((product) => product.full_name === tool)!)}
+                onOpen={(product) => setFocus({ kind: 'product', id: product.id })}
+                onRemove={myTools.toggle}
               />
             )}
             {view === 'graph' && selected && (

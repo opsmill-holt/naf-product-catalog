@@ -19,6 +19,7 @@ interface Props {
   selectedBlock: string | null
   onSelectBlock: (name: string | null) => void
   myTools: string[]
+  onToggleTool: (fullName: string) => void
 }
 
 const MORPH_MS = 550
@@ -65,7 +66,7 @@ function frameworkViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box
   }
 }
 
-function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
+function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, onToggleTool, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
   const framework = view === 'framework'
   const graph = useMemo(() => buildGraph(catalog, filters, focus), [catalog, filters, focus])
   const diagram = useMemo(() => frameworkLayout(catalog.blocks.map((block) => block.name)), [catalog])
@@ -81,10 +82,12 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
   const { edges } = morphed
   const nodes = useMemo(
     () =>
-      morphed.nodes.map((node) =>
-        node.type === 'product' && myTools.includes(node.data.product.full_name) ? { ...node, data: { ...node.data, mine: true } } : node,
-      ),
-    [morphed.nodes, myTools],
+      morphed.nodes.map((node) => {
+        if (node.type !== 'product') return node
+        const { full_name } = node.data.product
+        return { ...node, data: { ...node.data, mine: myTools.includes(full_name), onToggleMine: () => onToggleTool(full_name) } }
+      }),
+    [morphed.nodes, myTools, onToggleTool],
   )
   const { fitBounds, fitView, setViewport } = useReactFlow()
 

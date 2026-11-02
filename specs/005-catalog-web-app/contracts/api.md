@@ -20,19 +20,22 @@ Configuration (environment variables, never committed):
 ## POST /api/stacks
 
 Request body. `products` holds full names as `/api/catalog` returns them, at least 1 and at most 200,
-each once. `name`, `email` and `organization` are optional; an empty string is the same as leaving
-the field out.
+each once. `no_tool_blocks` lists the building blocks the visitor says they have no tool for; a block
+that is neither covered by the products nor listed means the visitor did not say. It is optional and
+may not name a block the products cover. `name`, `email` and `organization` are optional; an empty
+string is the same as leaving the field out.
 
 ```json
-{ "products": ["Cisco Crosswork Network Services Orchestrator (NSO)"], "name": "", "email": "", "organization": "Example Net" }
+{ "products": ["Cisco Crosswork Network Services Orchestrator (NSO)"], "no_tool_blocks": ["Presentation"], "name": "", "email": "", "organization": "Example Net" }
 ```
 
 The service creates a branch named `submission-<date>-<random>` with one `CatalogAutomationStack`
-record and opens a proposed change named "Automation stack: <organization, else name, else
+record (products in `products`, the blocks without a tool in `blocks_without_tool`) and opens a proposed change named "Automation stack: <organization, else name, else
 anonymous> (<n> products)". Maintainers merge it after review. Responses:
 
 - `201` `{"reference": "<branch name>"}`;
-- `422` when a product is not in the catalog on `main`, or the body is not valid;
+- `422` when a product or block is not in the catalog on `main`, when `no_tool_blocks` names a
+  block the products cover, or when the body is not valid;
 - `429` over the submission limit, which `/api/submissions` and `/api/stacks` share;
 - `502` when Infrahub could not store it; nothing is left behind.
 

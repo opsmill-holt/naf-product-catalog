@@ -491,3 +491,10 @@ nodes:
         min_count: 1
         identifier: automation_stack__products
         description: The products the visitor uses.
+      - name: blocks_without_tool
+        peer: CatalogBuildingBlock
+        kind: Attribute
+        cardinality: many
+        optional: true
+        identifier: automation_stack__blocks_without_tool
+        description: Blocks the visitor says they have no tool for. For other uncovered blocks, the visitor did not say.

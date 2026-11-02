@@ -2,22 +2,33 @@
 // Name, email and organization are optional; the service stores the stack on an Infrahub branch with
 // a proposed change (frontend/api/catalog_web/stacks.py).
 
-import { useState, type FormEvent } from 'react'
-import { submitStack, type SubmissionResult } from '../api'
+import { useState, type CSSProperties, type FormEvent } from 'react'
+import { submitStack, type Catalog, type SubmissionResult } from '../api'
+import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
 
 interface Props {
+  catalog: Catalog
   tools: string[] // full names, all in the catalog
   onRemove: (fullName: string) => void
   onClear: () => void
 }
 
-export function MyStack({ tools, onRemove, onClear }: Props) {
+export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
   const [open, setOpen] = useState(false)
   const [details, setDetails] = useState({ name: '', email: '', organization: '' })
+  const [ticked, setTicked] = useState<string[]>([])
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<SubmissionResult | null>(null)
 
   if (!tools.length && !open) return null
+
+  const blocks = catalog.blocks.map((block) => block.name).sort(byFrameworkOrder)
+  const covered = new Set(
+    catalog.products.filter((product) => tools.includes(product.full_name)).flatMap((product) => product.claims.map((claim) => claim.block)),
+  )
+  const uncovered = blocks.filter((block) => !covered.has(block))
+  // A block stops counting as "no tool" as soon as a chosen product covers it.
+  const noTool = ticked.filter((block) => uncovered.includes(block))
 
   const close = () => {
     setOpen(false)
@@ -27,7 +38,7 @@ export function MyStack({ tools, onRemove, onClear }: Props) {
   const send = async (event: FormEvent) => {
     event.preventDefault()
     setSending(true)
-    const outcome = await submitStack({ products: tools, ...details }).catch(
+    const outcome = await submitStack({ products: tools, no_tool_blocks: noTool, ...details }).catch(
       (): SubmissionResult => ({ ok: false, message: 'Your stack was not sent. Please try again.' }),
     )
     setSending(false)
@@ -35,6 +46,7 @@ export function MyStack({ tools, onRemove, onClear }: Props) {
     if (outcome.ok) {
       onClear()
       setDetails({ name: '', email: '', organization: '' })
+      setTicked([])
     }
   }
 
@@ -94,6 +106,41 @@ export function MyStack({ tools, onRemove, onClear }: Props) {
                     </li>
                   ))}
                 </ul>
+                {covered.size > 0 && (
+                  <section className="stack-section">
+                    <h3>Building blocks your tools cover</h3>
+                    <p className="stack-blocks">
+                      {blocks
+                        .filter((block) => covered.has(block))
+                        .map((block) => (
+                          <span key={block} className="stack-block" style={{ '--block-color': blockStyle(block).color } as CSSProperties}>
+                            {block}
+                          </span>
+                        ))}
+                    </p>
+                  </section>
+                )}
+                {uncovered.length > 0 && (
+                  <fieldset className="stack-section stack-gaps">
+                    <legend>Building blocks none of your tools cover</legend>
+                    <p className="stack-note">
+                      Tick each block you have no tool for. Leave a block unticked if you would rather not say, or if your tool for it is not
+                      in the catalog.
+                    </p>
+                    {uncovered.map((block) => (
+                      <label key={block} className="stack-gap">
+                        <input
+                          type="checkbox"
+                          checked={noTool.includes(block)}
+                          onChange={(event) =>
+                            setTicked(event.target.checked ? [...noTool, block] : noTool.filter((item) => item !== block))
+                          }
+                        />
+                        I have no tool for {block}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
                 {field('name', 'Name')}
                 {field('email', 'Email', 'email')}
                 {field('organization', 'Organization')}

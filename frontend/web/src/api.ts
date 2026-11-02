@@ -97,6 +97,7 @@ export function submitProduct(body: unknown): Promise<SubmissionResult> {
 // The products one visitor uses, by full name, with optional details about who sends them.
 export interface StackSubmission {
   products: string[]
+  no_tool_blocks: string[] // blocks the visitor says they have no tool for
   name?: string
   email?: string
   organization?: string

@@ -9,7 +9,7 @@ export type Focus = { kind: 'product'; id: string } | { kind: 'block'; name: str
 
 // morph, count and selected are set only by src/graph/morph.ts, for the framework view.
 export type BlockNodeData = { name: string; faded: boolean; morph?: number; count?: number; selected?: boolean }
-export type ProductNodeData = { product: Product; faded: boolean; mine?: boolean }
+export type ProductNodeData = { product: Product; faded: boolean; mine?: boolean; onToggleMine?: () => void }
 export type CoverageEdgeData = { extent: Extent; block: string; faded: boolean; visibility?: number }
 
 export type BlockNode = Node<BlockNodeData, 'block'>

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { fetchCatalog } from './api'
 import { BlockDetails } from './components/BlockDetails'
 import { FilterBar } from './components/FilterBar'
@@ -10,6 +10,8 @@ import type { Focus } from './graph/buildGraph'
 import { CatalogGraph, type View } from './graph/CatalogGraph'
 import { slugify } from './graph/logos'
 import { MadeBy } from './components/MadeBy'
+import { MyStack } from './components/MyStack'
+import { useMyTools } from './myTools'
 import { SubmitForm } from './submit/SubmitForm'
 
 const isSubmitView = () => window.location.hash === '#submit'
@@ -37,6 +39,7 @@ export default function App() {
   )
   const [frameworkBlock, setFrameworkBlock] = useState<string | null>(null)
   const narrow = useNarrow()
+  const myTools = useMyTools()
   const [pendingProduct, setPendingProduct] = useState(() => new URLSearchParams(window.location.search).get('product'))
 
   // Open the product named in the page address once the catalog has loaded.
@@ -54,6 +57,11 @@ export default function App() {
   const selectedId = focus?.kind === 'product' ? focus.id : null
   const selected = catalog.data?.products.find((product) => product.id === selectedId) ?? null
   const selectedBlock = catalog.data?.blocks.find((block) => block.name === frameworkBlock) ?? null
+  // Marks for products that are no longer in the catalog are ignored.
+  const stack = useMemo(
+    () => myTools.tools.filter((tool) => catalog.data?.products.some((product) => product.full_name === tool)),
+    [myTools.tools, catalog.data],
+  )
 
   useEffect(() => {
     if (pendingProduct) return
@@ -128,9 +136,10 @@ export default function App() {
           <div className="view-row">
             <p className="hint">
               {view === 'graph'
-                ? 'Drag to move, scroll to zoom. Click a product or a building block to highlight its links. Solid lines are full coverage, dashed lines partial coverage.'
+                ? 'Drag to move, scroll to zoom. Click a product or a building block to highlight its links. Solid lines are full coverage, dashed lines partial coverage. To submit the tools you use, open each one and click “I use this”.'
                 : 'The building blocks as the framework diagram arranges them. Click a block to view its MUST and SHOULD requirements.'}
             </p>
+            <MyStack tools={stack} onRemove={myTools.toggle} onClear={myTools.clear} />
             <div className="view-toggle" role="group" aria-label="View">
               <button
                 type="button"
@@ -173,10 +182,17 @@ export default function App() {
                 view={view}
                 selectedBlock={frameworkBlock}
                 onSelectBlock={setFrameworkBlock}
+                myTools={stack}
               />
             )}
             {view === 'graph' && selected && (
-              <ProductDetails product={selected} requirements={catalog.data.requirements} onClose={() => setFocus(null)} />
+              <ProductDetails
+                product={selected}
+                requirements={catalog.data.requirements}
+                inStack={stack.includes(selected.full_name)}
+                onToggleStack={() => myTools.toggle(selected.full_name)}
+                onClose={() => setFocus(null)}
+              />
             )}
             {view === 'framework' && selectedBlock && (
               <BlockDetails

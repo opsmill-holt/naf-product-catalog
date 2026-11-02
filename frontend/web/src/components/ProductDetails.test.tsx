@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Product, Requirement } from '../api'
 import { ProductDetails } from './ProductDetails'
 
@@ -55,14 +55,14 @@ afterEach(cleanup)
 
 describe('ProductDetails', () => {
   it('shows submitted text as plain text, never as markup', () => {
-    const { container } = render(<ProductDetails product={product} requirements={requirements} onClose={() => {}} />)
+    const { container } = render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
     expect(container.querySelector('script')).toBeNull()
     expect(container.querySelector('img')).toBeNull()
     expect(container.textContent).toContain('<script>alert("x")</script>')
   })
 
   it('lists the MUST and SHOULD requirements the product falls short on first, with verdict and source', () => {
-    render(<ProductDetails product={product} requirements={requirements} onClose={() => {}} />)
+    render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
     expect(screen.getByText('Meets 1 of 2 MUST and SHOULD requirements of Intent.')).toBeTruthy()
     const shortfalls = screen.getByRole('list', { name: 'Requirements Intent falls short on' })
     const items = within(shortfalls).getAllByRole('listitem').map((item) => item.textContent)
@@ -76,7 +76,7 @@ describe('ProductDetails', () => {
   })
 
   it('shows met and MAY requirements on request', async () => {
-    render(<ProductDetails product={product} requirements={requirements} onClose={() => {}} />)
+    render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
     expect(screen.queryByText('Represents any network aspect')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Show 1 met, 1 MAY and 1 framework-wide requirements' }))
     expect(screen.getByText('Represents any network aspect')).toBeTruthy()
@@ -87,8 +87,19 @@ describe('ProductDetails', () => {
 
   it('says when a claim is not assessed yet', () => {
     const unassessed = { ...product, claims: [{ ...product.claims[0], assessed: false, verdicts: [] }] }
-    render(<ProductDetails product={unassessed} requirements={requirements} onClose={() => {}} />)
+    render(<ProductDetails product={unassessed} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
     expect(screen.getByText('Not assessed')).toBeTruthy()
     expect(screen.getByText(/Not assessed yet against the framework/)).toBeTruthy()
+  })
+
+  it('adds the product to my stack and shows when it is in it', async () => {
+    const onToggleStack = vi.fn()
+    const { rerender } = render(
+      <ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={onToggleStack} onClose={() => {}} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: '+ I use this' }))
+    expect(onToggleStack).toHaveBeenCalledOnce()
+    rerender(<ProductDetails product={product} requirements={requirements} inStack onToggleStack={onToggleStack} onClose={() => {}} />)
+    expect(screen.getByRole('button', { name: /In my stack/ }).getAttribute('aria-pressed')).toBe('true')
   })
 })

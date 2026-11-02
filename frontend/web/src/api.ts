@@ -90,8 +90,24 @@ export interface SubmissionResult {
   message?: string
 }
 
-export async function submitProduct(body: unknown): Promise<SubmissionResult> {
-  const response = await fetch('/api/submissions', {
+export function submitProduct(body: unknown): Promise<SubmissionResult> {
+  return post('/api/submissions', body)
+}
+
+// The products one visitor uses, by full name, with optional details about who sends them.
+export interface StackSubmission {
+  products: string[]
+  name?: string
+  email?: string
+  organization?: string
+}
+
+export function submitStack(body: StackSubmission): Promise<SubmissionResult> {
+  return post('/api/stacks', body)
+}
+
+async function post(path: string, body: unknown): Promise<SubmissionResult> {
+  const response = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

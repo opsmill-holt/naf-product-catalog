@@ -66,8 +66,8 @@ export function ProductNode({ data }: NodeProps<ProductNodeType>) {
   const { product } = data
   return (
     <div
-      className={`graph-product status-${product.status}${data.faded ? ' faded' : ''}`}
-      title={product.full_name}
+      className={`graph-product status-${product.status}${data.faded ? ' faded' : ''}${data.mine ? ' mine' : ''}`}
+      title={data.mine ? `${product.full_name} (in my stack)` : product.full_name}
     >
       {centreHandles}
       <Logo fullName={product.full_name} name={product.name} />
@@ -75,6 +75,11 @@ export function ProductNode({ data }: NodeProps<ProductNodeType>) {
         <span className="graph-product-name">{product.name}</span>
         {product.status !== 'active' && <span className="graph-product-status">{STATUS_LABELS[product.status]}</span>}
       </span>
+      {data.mine && (
+        <span className="graph-product-mine" aria-label="In my stack">
+          ✓
+        </span>
+      )}
     </div>
   )
 }

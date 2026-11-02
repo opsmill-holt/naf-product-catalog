@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
 from typing import Literal
 
@@ -169,16 +170,31 @@ async def submit(client: InfrahubClient, submission: Submission, branch_name: st
         raise SubmissionError(409, f"{publisher_name} {submission.product.name} is already in the catalog")
 
     branch = branch_name or new_branch_name()
+    await open_proposed_change(
+        client,
+        branch,
+        name=f"Submission: {publisher_name} {submission.product.name}",
+        description=(
+            "Submitted through the public catalog web app. Check every fact against its source "
+            "before merging."
+        ),
+        write=lambda: _write_submission(client, submission, branch),
+    )
+    return branch
+
+
+async def open_proposed_change(
+    client: InfrahubClient, branch: str, name: str, description: str, write: Callable[[], Awaitable[None]]
+) -> None:
+    """Create the branch, write the records on it and open a proposed change to main. If any step
+    fails, delete the branch so that nothing is left behind."""
     await client.branch.create(branch_name=branch, sync_with_git=False, wait_until_completion=True)
     try:
-        await _write_submission(client, submission, branch)
+        await write()
         proposed_change = await client.create(
             "CoreProposedChange",
-            name=f"Submission: {publisher_name} {submission.product.name}"[:250],
-            description=(
-                "Submitted through the public catalog web app. Check every fact against its source "
-                "before merging."
-            ),
+            name=name[:250],
+            description=description,
             source_branch=branch,
             destination_branch="main",
         )
@@ -190,7 +206,6 @@ async def submit(client: InfrahubClient, submission: Submission, branch_name: st
         except Exception:
             logger.exception("could not delete branch %s after a failed submission", branch)
         raise
-    return branch
 
 
 async def _write_submission(client: InfrahubClient, submission: Submission, branch: str) -> None:

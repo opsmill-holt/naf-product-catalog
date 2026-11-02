@@ -1,4 +1,4 @@
-"""The catalog web service: read the catalog and submit products for review."""
+"""The catalog web service: read the catalog, and submit products and automation stacks for review."""
 
 import logging
 
@@ -10,6 +10,7 @@ from infrahub_sdk.exceptions import Error as InfrahubError
 from catalog_web.catalog import CatalogCache
 from catalog_web.infrahub import get_client
 from catalog_web.limits import SubmissionLimit
+from catalog_web.stacks import Stack, submit_stack
 from catalog_web.submissions import Submission, SubmissionError, submit
 
 logging.basicConfig(level=logging.INFO)
@@ -52,5 +53,24 @@ async def submissions(submission: Submission, request: Request) -> dict[str, str
         return JSONResponse(
             status_code=502,
             content={"detail": "Your submission was not saved. Nothing was created. Please try again."},
+        )
+    return {"reference": reference}
+
+
+@app.post("/api/stacks", status_code=201)
+async def stacks(stack: Stack, request: Request) -> dict[str, str]:
+    address = request.client.host if request.client else "unknown"
+    if not limit.allow(address):
+        logger.warning("stack refused: over the limit for %s or in total", address)
+        return JSONResponse(status_code=429, content={"detail": TOO_MANY})
+    try:
+        reference = await submit_stack(get_client(), stack)
+    except SubmissionError as error:
+        return JSONResponse(status_code=error.status_code, content={"detail": error.message})
+    except (httpx.HTTPError, InfrahubError):
+        logger.exception("saving a stack failed")
+        return JSONResponse(
+            status_code=502,
+            content={"detail": "Your stack was not saved. Nothing was created. Please try again."},
         )
     return {"reference": reference}

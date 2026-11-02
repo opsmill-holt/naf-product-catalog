@@ -28,10 +28,12 @@ function SourceLinks({ sources }: { sources: Source[] }) {
 interface Props {
   product: Product
   requirements: Requirement[]
+  inStack: boolean
+  onToggleStack: () => void
   onClose: () => void
 }
 
-export function ProductDetails({ product, requirements, onClose }: Props) {
+export function ProductDetails({ product, requirements, inStack, onToggleStack, onClose }: Props) {
   const claims = [...product.claims].sort((a, b) =>
     a.extent === b.extent ? a.block.localeCompare(b.block) : a.extent === 'full' ? -1 : 1,
   )
@@ -49,6 +51,10 @@ export function ProductDetails({ product, requirements, onClose }: Props) {
           </p>
         </div>
       </header>
+
+      <button type="button" className={`button stack-toggle${inStack ? ' stack-toggle-on' : ''}`} aria-pressed={inStack} onClick={onToggleStack}>
+        {inStack ? '✓ In my stack. Click to remove' : '+ I use this'}
+      </button>
 
       <div className="badges">
         <span className={`badge badge-status-${product.status}`}>

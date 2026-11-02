@@ -442,3 +442,52 @@ nodes:
         kind: TextArea
         optional: true
         order_weight: 1100
+
+  - name: AutomationStack
+    namespace: Catalog
+    description: The products one visitor of the catalog web app uses. Not part of the public catalog.
+    label: Automation Stack
+    icon: mdi:layers-outline
+    include_in_menu: true
+    human_friendly_id:
+      - reference__value
+    order_by:
+      - submitted_at__value
+    display_label: reference__value
+    generate_profile: false
+    attributes:
+      - name: reference
+        kind: Text
+        unique: true
+        description: The submission branch the stack was sent on.
+        order_weight: 1000
+      - name: submitted_at
+        kind: DateTime
+        order_weight: 1100
+      - name: submitter_name
+        kind: Text
+        label: Name
+        optional: true
+        description: As the visitor typed it; not verified.
+        order_weight: 1200
+      - name: submitter_email
+        kind: Email
+        label: Email
+        optional: true
+        description: As the visitor typed it; not verified.
+        order_weight: 1300
+      - name: submitter_organization
+        kind: Text
+        label: Organization
+        optional: true
+        description: As the visitor typed it; not verified.
+        order_weight: 1400
+    relationships:
+      - name: products
+        peer: CatalogProduct
+        kind: Attribute
+        cardinality: many
+        optional: false
+        min_count: 1
+        identifier: automation_stack__products
+        description: The products the visitor uses.

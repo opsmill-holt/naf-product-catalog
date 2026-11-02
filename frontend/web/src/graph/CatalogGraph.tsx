@@ -18,6 +18,7 @@ interface Props {
   view: View
   selectedBlock: string | null
   onSelectBlock: (name: string | null) => void
+  myTools: string[]
 }
 
 const MORPH_MS = 550
@@ -64,7 +65,7 @@ function frameworkViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box
   }
 }
 
-function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
+function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
   const framework = view === 'framework'
   const graph = useMemo(() => buildGraph(catalog, filters, focus), [catalog, filters, focus])
   const diagram = useMemo(() => frameworkLayout(catalog.blocks.map((block) => block.name)), [catalog])
@@ -73,9 +74,17 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
     [catalog, filters],
   )
   const progress = useMorphProgress(framework ? 1 : 0)
-  const { nodes, edges } = useMemo(
+  const morphed = useMemo(
     () => morphGraph(graph, diagram, progress, { counts, selectedBlock }),
     [graph, diagram, progress, counts, selectedBlock],
+  )
+  const { edges } = morphed
+  const nodes = useMemo(
+    () =>
+      morphed.nodes.map((node) =>
+        node.type === 'product' && myTools.includes(node.data.product.full_name) ? { ...node, data: { ...node.data, mine: true } } : node,
+      ),
+    [morphed.nodes, myTools],
   )
   const { fitBounds, fitView, setViewport } = useReactFlow()
 

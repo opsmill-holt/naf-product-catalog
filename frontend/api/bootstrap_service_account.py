@@ -30,6 +30,8 @@ DENY, ALLOW_OTHER, ALLOW_ALL = 1, 4, 6
 OBJECT_PERMISSIONS = [
     ("Catalog", "*", "view", ALLOW_ALL),
     ("Catalog", "*", "create", ALLOW_OTHER),
+    # The stack review (catalog_web/analysis.py) writes its answer to the stack record after creating it.
+    ("Catalog", "AutomationStack", "update", ALLOW_OTHER),
     ("Core", "ProposedChange", "create", ALLOW_ALL),
     ("Core", "ProposedChange", "view", ALLOW_ALL),
 ]

@@ -7,13 +7,14 @@ import { MyStack } from './MyStack'
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  window.localStorage.clear()
 })
 
 // Publisher a covers Collector and Observability; Publisher c covers Intent.
 const tools = ['Publisher a', 'Publisher c']
 
 function respond(status: number, body: unknown) {
-  const fetch = vi.fn().mockResolvedValue({ ok: status < 300, json: () => Promise.resolve(body) })
+  const fetch = vi.fn().mockResolvedValue({ ok: status < 300, status, json: () => Promise.resolve(body) })
   vi.stubGlobal('fetch', fetch)
   return fetch
 }
@@ -95,30 +96,55 @@ describe('MyStack', () => {
     expect(JSON.parse(fetch.mock.calls[0][1].body).no_tool_blocks).toEqual([])
   })
 
-  it('shows the review of the stack once the service has it', async () => {
+  it('keeps checking for the review after the dialog is closed, then offers it in a pop-up', async () => {
     const fetch = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ status: 'pending', text: null }) })
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: 'done', text: 'Your tools cover Collector.' }) })
+      .mockResolvedValueOnce({ ok: true, status: 201, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ status: 'pending', text: null }) })
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ status: 'done', text: 'Your tools cover Collector.' }) })
     vi.stubGlobal('fetch', fetch)
     render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
-    expect(await screen.findByText(/Reviewing your stack/)).toBeTruthy()
-    expect(await screen.findByText('Your tools cover Collector.', {}, { timeout: 8000 })).toBeTruthy()
+    expect(await screen.findByText(/Claude is reviewing your stack\. You can close this window/)).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.getByText('Claude is reviewing your stack…')).toBeTruthy()
+    expect(await screen.findByText('Your stack review is ready.', {}, { timeout: 8000 })).toBeTruthy()
     expect(fetch).toHaveBeenCalledWith('/api/analyses/abc')
+    await userEvent.click(screen.getByRole('button', { name: 'View review' }))
+    expect(screen.getByRole('dialog', { name: 'Review of your stack' }).textContent).toContain('Your tools cover Collector.')
+    expect(screen.queryByText('Your stack review is ready.')).toBeNull()
+    await userEvent.click(screen.getAllByRole('button', { name: 'Close' })[0])
+    expect(screen.getByRole('button', { name: 'View my stack review' })).toBeTruthy()
+  }, 15_000)
+
+  it('says when the review is not available', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 201, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ status: 'failed', text: null }) })
+    vi.stubGlobal('fetch', fetch)
+    render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(await screen.findByText(/review of your stack is not available/, {}, { timeout: 6000 })).toBeTruthy()
   }, 10_000)
 
-  it('says the review is not available when it fails, and shows no review section when there is none', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ reference: 'r', analysis_id: 'abc' }) })
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: 'failed', text: null }) })
-    vi.stubGlobal('fetch', fetch)
-    render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
-    expect(await screen.findByText(/review is not available/, {}, { timeout: 5000 })).toBeTruthy()
+  it('resumes waiting for a review after a reload', async () => {
+    window.localStorage.setItem('catalog.stackReview', JSON.stringify({ id: 'abc', startedAt: Date.now(), seen: false }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ status: 'done', text: 'Ready.' }) }))
+    render(<MyStack catalog={sampleCatalog} tools={[]} onRemove={() => {}} onClear={() => {}} />)
+    expect(screen.getByText('Claude is reviewing your stack…')).toBeTruthy()
+    expect(await screen.findByText('Your stack review is ready.', {}, { timeout: 6000 })).toBeTruthy()
+  }, 10_000)
+
+  it('drops a stored review the service no longer has, without a message', async () => {
+    window.localStorage.setItem('catalog.stackReview', JSON.stringify({ id: 'old', startedAt: Date.now(), seen: false }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, json: () => Promise.resolve({}) }))
+    const { container } = render(<MyStack catalog={sampleCatalog} tools={[]} onRemove={() => {}} onClear={() => {}} />)
+    await new Promise((resolve) => setTimeout(resolve, 3500))
+    expect(container.innerHTML).toBe('')
+    expect(window.localStorage.getItem('catalog.stackReview')).toBeNull()
   }, 10_000)
 })

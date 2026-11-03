@@ -1,36 +1,12 @@
 // The products the visitor marked as tools they use, and the step that sends them to the maintainers.
 // Name, email and organization are optional; the service stores the stack on an Infrahub branch with
-// a proposed change (frontend/api/catalog_web/stacks.py).
+// a proposed change (frontend/api/catalog_web/stacks.py). When the service reviews the stack, the header
+// shows that the review is in progress and a pop-up says when it is ready (src/stackReview.ts).
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
-import { fetchAnalysis, submitStack, type Analysis, type Catalog, type SubmissionResult } from '../api'
+import { useState, type CSSProperties, type FormEvent } from 'react'
+import { submitStack, type Catalog, type SubmissionResult } from '../api'
 import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
-
-const POLL_MS = 3000
-const GIVE_UP_MS = 120_000
-
-// Asks the service for the stack review every few seconds until it is done or failed, or two minutes pass.
-function useAnalysis(id: string | undefined): Analysis | null {
-  const [analysis, setAnalysis] = useState<Analysis | null>(null)
-  useEffect(() => {
-    if (!id) return
-    let stopped = false
-    const began = Date.now()
-    const poll = async () => {
-      const next = await fetchAnalysis(id).catch((): Analysis => ({ status: 'failed', text: null }))
-      if (stopped) return
-      const gaveUp = next.status === 'pending' && Date.now() - began > GIVE_UP_MS
-      setAnalysis(gaveUp ? { status: 'failed', text: null } : next)
-      if (next.status === 'pending' && !gaveUp) timer = window.setTimeout(poll, POLL_MS)
-    }
-    let timer = window.setTimeout(poll, POLL_MS)
-    return () => {
-      stopped = true
-      window.clearTimeout(timer)
-    }
-  }, [id])
-  return id ? (analysis ?? { status: 'pending', text: null }) : null
-}
+import { useStackReview } from '../stackReview'
 
 interface Props {
   catalog: Catalog
@@ -45,9 +21,10 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
   const [ticked, setTicked] = useState<string[]>([])
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<SubmissionResult | null>(null)
-  const analysis = useAnalysis(result?.ok ? result.analysisId : undefined)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const { review, start, markSeen, dismiss } = useStackReview()
 
-  if (!tools.length && !open) return null
+  if (!tools.length && !open && !review) return null
 
   const blocks = catalog.blocks.map((block) => block.name).sort(byFrameworkOrder)
   const covered = new Set(
@@ -62,6 +39,16 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
     setResult(null)
   }
 
+  const openReview = () => {
+    setOpen(false)
+    setResult(null)
+    setReviewOpen(true)
+    markSeen()
+  }
+
+  // The pop-up appears when the review is finished and the visitor has not opened it yet.
+  const finished = review && review.status !== 'pending' && !review.seen
+
   const send = async (event: FormEvent) => {
     event.preventDefault()
     setSending(true)
@@ -70,6 +57,7 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
     )
     setSending(false)
     setResult(outcome)
+    if (outcome.ok && outcome.analysisId) start(outcome.analysisId)
     if (outcome.ok) {
       onClear()
       setDetails({ name: '', email: '', organization: '' })
@@ -91,6 +79,17 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
 
   return (
     <>
+      {review?.status === 'pending' && (
+        <span className="review-indicator" role="status">
+          <span className="spinner" aria-hidden="true" />
+          Claude is reviewing your stack…
+        </span>
+      )}
+      {review?.status === 'done' && (
+        <button type="button" className="button review-button" onClick={openReview}>
+          View my stack review
+        </button>
+      )}
       {tools.length > 0 && (
         <div className="stack-bar" role="region" aria-label="My stack">
           <span>
@@ -117,15 +116,11 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                 <p role="status">
                   Thank you. Your stack was sent as {result.reference}. The catalog maintainers review it before it is stored.
                 </p>
-                {analysis && (
-                  <section className="stack-analysis" aria-live="polite" aria-label="Review of my stack">
-                    <h3>Review of your stack</h3>
-                    {analysis.status === 'pending' && <p className="stack-note">Reviewing your stack. This can take up to a minute…</p>}
-                    {analysis.status === 'done' && <p className="stack-analysis-text">{analysis.text}</p>}
-                    {analysis.status === 'failed' && (
-                      <p className="stack-note">The review is not available right now. Your stack was still sent.</p>
-                    )}
-                  </section>
+                {result.analysisId && (
+                  <p className="stack-note">
+                    Claude is reviewing your stack. You can close this window: a message appears when the review is ready, usually within a
+                    minute.
+                  </p>
                 )}
                 <button type="button" className="button" onClick={close}>
                   Done
@@ -192,6 +187,51 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {finished && !reviewOpen && (
+        <div className={`review-toast${review.status === 'failed' ? ' review-toast-failed' : ''}`} role="alert">
+          {review.status === 'done' ? (
+            <>
+              <span>Your stack review is ready.</span>
+              <button type="button" className="primary-button" onClick={openReview}>
+                View review
+              </button>
+            </>
+          ) : (
+            <span>The review of your stack is not available right now. Your stack was still sent.</span>
+          )}
+          <button type="button" className="review-toast-close" aria-label="Close message" onClick={markSeen}>
+            ×
+          </button>
+        </div>
+      )}
+
+      {reviewOpen && review?.status === 'done' && (
+        <div className="stack-overlay" onClick={() => setReviewOpen(false)}>
+          <div className="stack-dialog" role="dialog" aria-modal="true" aria-labelledby="review-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="details-close" onClick={() => setReviewOpen(false)} aria-label="Close">
+              ×
+            </button>
+            <h2 id="review-title">Review of your stack</h2>
+            <p className="stack-analysis-text">{review.text}</p>
+            <div className="review-actions">
+              <button type="button" className="button" onClick={() => setReviewOpen(false)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setReviewOpen(false)
+                  dismiss()
+                }}
+              >
+                Remove the review from this page
+              </button>
+            </div>
           </div>
         </div>
       )}

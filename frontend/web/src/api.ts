@@ -92,12 +92,14 @@ export interface SubmissionResult {
 }
 
 export interface Analysis {
-  status: 'pending' | 'done' | 'failed'
+  // missing: the service no longer has it (it keeps reviews for an hour, and forgets them on restart)
+  status: 'pending' | 'done' | 'failed' | 'missing'
   text: string | null
 }
 
 export async function fetchAnalysis(id: string): Promise<Analysis> {
   const response = await fetch(`/api/analyses/${encodeURIComponent(id)}`)
+  if (response.status === 404) return { status: 'missing', text: null }
   if (!response.ok) return { status: 'failed', text: null }
   return response.json()
 }

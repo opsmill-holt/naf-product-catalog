@@ -1,4 +1,4 @@
-// Turns the catalog, the filters and the current focus into graph nodes and edges.
+// Turns the catalog, the filters, the current focus and the search text into graph nodes and edges.
 
 import type { Edge, Node } from '@xyflow/react'
 import type { Catalog, Extent, Product } from '../api'
@@ -20,7 +20,26 @@ export type CoverageEdge = Edge<CoverageEdgeData>
 
 export const blockNodeId = (name: string) => `block:${name}`
 
-export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus) {
+// A product matches the search when its name or publisher contains the text, ignoring case.
+export const matchesSearch = (product: Product, search: string) => {
+  const text = search.trim().toLowerCase()
+  return text !== '' && `${product.full_name} ${product.publisher}`.toLowerCase().includes(text)
+}
+
+// The products the filters show, each with the claims that are drawn.
+export function visibleProducts(catalog: Catalog, filters: Filters) {
+  return catalog.products
+    .filter((product) => filters.statuses.includes(product.status))
+    .map((product) => ({
+      product,
+      claims: product.claims.filter(
+        (claim) => (!filters.block || claim.block === filters.block) && filters.extents.includes(claim.extent),
+      ),
+    }))
+    .filter((entry) => entry.claims.length > 0)
+}
+
+export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus, search = '') {
   const blockNames = catalog.blocks
     .map((block) => block.name)
     .filter((name) => !filters.block || name === filters.block)
@@ -36,15 +55,7 @@ export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus) {
     })),
   )
 
-  const visible = catalog.products
-    .filter((product) => filters.statuses.includes(product.status))
-    .map((product) => ({
-      product,
-      claims: product.claims.filter(
-        (claim) => visibleBlocks.has(claim.block) && filters.extents.includes(claim.extent),
-      ),
-    }))
-    .filter((entry) => entry.claims.length > 0)
+  const visible = visibleProducts(catalog, filters)
 
   // Which nodes stay bright for the current focus.
   const bright = new Set<string>()
@@ -59,7 +70,22 @@ export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus) {
       .filter((entry) => entry.claims.some((claim) => claim.block === focus.name))
       .forEach((entry) => bright.add(entry.product.id))
   }
-  const faded = (id: string) => focus !== null && !bright.has(id)
+  // While a search is typed, it decides what stays bright: the matching products, the blocks they
+  // cover, and a block whose name matches.
+  const searching = search.trim() !== ''
+  const matching = new Set(visible.filter((entry) => matchesSearch(entry.product, search)).map((entry) => entry.product.id))
+  if (searching) {
+    bright.clear()
+    for (const entry of visible) {
+      if (!matching.has(entry.product.id)) continue
+      bright.add(entry.product.id)
+      entry.claims.forEach((claim) => bright.add(blockNodeId(claim.block)))
+    }
+    blockNames
+      .filter((name) => name.toLowerCase().includes(search.trim().toLowerCase()))
+      .forEach((name) => bright.add(blockNodeId(name)))
+  }
+  const faded = (id: string) => (searching || focus !== null) && !bright.has(id)
 
   const nodes: GraphNode[] = [
     ...blockNames.map(
@@ -93,8 +119,9 @@ export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus) {
 
   const edges: CoverageEdge[] = visible.flatMap(({ product, claims }) =>
     claims.map((claim) => {
-      const edgeFaded =
-        focus?.kind === 'product'
+      const edgeFaded = searching
+        ? !matching.has(product.id)
+        : focus?.kind === 'product'
           ? focus.id !== product.id
           : focus?.kind === 'block'
             ? focus.name !== claim.block
@@ -109,5 +136,5 @@ export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus) {
     }),
   )
 
-  return { nodes, edges }
+  return { nodes, edges, matches: matching.size }
 }

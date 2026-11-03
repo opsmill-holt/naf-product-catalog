@@ -6,7 +6,7 @@ import { FilterBar } from './components/FilterBar'
 import { FrameworkView } from './components/FrameworkView'
 import { ProductDetails } from './components/ProductDetails'
 import { countBlockProducts, parseFilters, serializeFilters, type Filters } from './filters'
-import type { Focus } from './graph/buildGraph'
+import { matchesSearch, visibleProducts, type Focus } from './graph/buildGraph'
 import { CatalogGraph, type View } from './graph/CatalogGraph'
 import { slugify } from './graph/logos'
 import { MadeBy } from './components/MadeBy'
@@ -41,6 +41,7 @@ export default function App() {
   const [frameworkBlock, setFrameworkBlock] = useState<string | null>(null)
   const narrow = useNarrow()
   const myTools = useMyTools()
+  const [search, setSearch] = useState('')
   const [pendingProduct, setPendingProduct] = useState(() => new URLSearchParams(window.location.search).get('product'))
 
   // Open the product named in the page address once the catalog has loaded.
@@ -58,6 +59,10 @@ export default function App() {
   const selectedId = focus?.kind === 'product' ? focus.id : null
   const selected = catalog.data?.products.find((product) => product.id === selectedId) ?? null
   const selectedBlock = catalog.data?.blocks.find((block) => block.name === frameworkBlock) ?? null
+  const matches = useMemo(
+    () => (catalog.data && search.trim() ? visibleProducts(catalog.data, filters).filter((entry) => matchesSearch(entry.product, search)).length : 0),
+    [catalog.data, filters, search],
+  )
   // Marks for products that are no longer in the catalog are ignored.
   const stack = useMemo(
     () => myTools.tools.filter((tool) => catalog.data?.products.some((product) => product.full_name === tool)),
@@ -139,34 +144,55 @@ export default function App() {
           />
           <p className="hint">
             {view === 'graph'
-              ? 'Drag to move, scroll to zoom. Click a product or a building block to highlight its links. Click + on a product to add it to the tools you use, then submit your stack.'
+              ? 'Drag to move, scroll to zoom. Click a product to highlight its links, or a building block to show only that block. Type in the search box to find products. Click + on a product to add it to the tools you use, then submit your stack.'
               : 'The building blocks as the framework diagram arranges them. Click a block to view its MUST and SHOULD requirements.'}
           </p>
           <div className={`graph-stage${view === 'framework' && narrow ? ' graph-stage-list' : ''}`}>
             <div className="graph-overlay-left">
-              <div className="view-toggle" role="group" aria-label="View">
-                <button
-                  type="button"
-                  className="chip"
-                  aria-pressed={view === 'graph'}
-                  onClick={() => {
-                    setView('graph')
-                    setFrameworkBlock(null)
-                  }}
-                >
-                  Products
-                </button>
-                <button
-                  type="button"
-                  className="chip"
-                  aria-pressed={view === 'framework'}
-                  onClick={() => {
-                    setView('framework')
-                    setFocus(null)
-                  }}
-                >
-                  Framework only
-                </button>
+              <div className="graph-toolbar">
+                <div className="view-toggle" role="group" aria-label="View">
+                  <button
+                    type="button"
+                    className="chip"
+                    aria-pressed={view === 'graph'}
+                    onClick={() => {
+                      setView('graph')
+                      setFrameworkBlock(null)
+                    }}
+                  >
+                    Products
+                  </button>
+                  <button
+                    type="button"
+                    className="chip"
+                    aria-pressed={view === 'framework'}
+                    onClick={() => {
+                      setView('framework')
+                      setFocus(null)
+                    }}
+                  >
+                    Framework only
+                  </button>
+                </div>
+                {view === 'graph' && (
+                  <div className="graph-search">
+                    <input
+                      type="search"
+                      placeholder="Search products"
+                      aria-label="Search products by name or publisher"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') setSearch('')
+                      }}
+                    />
+                    {search.trim() && (
+                      <span className="graph-search-count" role="status">
+                        {matches === 0 ? 'No matches' : `${matches} ${matches === 1 ? 'match' : 'matches'}`}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               {view === 'graph' && (
                 <StackList
@@ -210,6 +236,11 @@ export default function App() {
                 onSelectBlock={setFrameworkBlock}
                 myTools={stack}
                 onToggleTool={myTools.toggle}
+                search={view === 'graph' ? search : ''}
+                onBlockClick={(name) => {
+                  setFilters({ ...filters, block: filters.block === name ? null : name })
+                  setFocus(null)
+                }}
               />
             )}
             {view === 'graph' && selected && (

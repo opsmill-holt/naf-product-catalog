@@ -20,6 +20,8 @@ interface Props {
   onSelectBlock: (name: string | null) => void
   myTools: string[]
   onToggleTool: (fullName: string) => void
+  search: string
+  onBlockClick: (name: string) => void // in the graph view, the same as the block's filter chip
 }
 
 const MORPH_MS = 550
@@ -68,9 +70,9 @@ function frameworkViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box
   }
 }
 
-function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, onToggleTool, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
+function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, onToggleTool, search, onBlockClick, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
   const framework = view === 'framework'
-  const graph = useMemo(() => buildGraph(catalog, filters, focus), [catalog, filters, focus])
+  const graph = useMemo(() => buildGraph(catalog, filters, focus, search), [catalog, filters, focus, search])
   const diagram = useMemo(() => frameworkLayout(catalog.blocks.map((block) => block.name)), [catalog])
   const counts = useMemo(
     () => Object.fromEntries(catalog.blocks.map((block) => [block.name, countBlockProducts(catalog, filters, block.name)])),
@@ -145,7 +147,7 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
   const onNodeClick = (_: unknown, node: GraphNode) => {
     if (framework) {
       if (node.type === 'block') onSelectBlock(node.data.name)
-    } else if (node.type === 'block') onFocus({ kind: 'block', name: node.data.name })
+    } else if (node.type === 'block') onBlockClick(node.data.name)
     else if (node.type === 'product') onFocus({ kind: 'product', id: node.id })
   }
 

@@ -44,4 +44,25 @@ describe('buildGraph', () => {
     const bright = nodes.filter((node) => !node.data.faded).map((node) => node.id).sort()
     expect(bright).toEqual(['block:Intent', 'c'])
   })
+
+  it('keeps the products matching the search bright, with the blocks they cover, ignoring case', () => {
+    const { nodes, edges, matches } = buildGraph(sampleCatalog, DEFAULT_FILTERS, null, '  PUBLISHER C ')
+    expect(matches).toBe(1)
+    const bright = nodes.filter((node) => !node.data.faded).map((node) => node.id).sort()
+    expect(bright).toEqual(['block:Intent', 'c'])
+    expect(edges.filter((edge) => !edge.data?.faded).map((edge) => edge.id)).toEqual(['c->Intent'])
+  })
+
+  it('also keeps a block bright when its name matches the search', () => {
+    const { nodes, matches } = buildGraph(sampleCatalog, DEFAULT_FILTERS, null, 'executor')
+    expect(matches).toBe(0)
+    expect(nodes.filter((node) => !node.data.faded).map((node) => node.id)).toEqual(['block:Executor'])
+  })
+
+  it('fades nothing for an empty search', () => {
+    const { nodes, matches } = buildGraph(sampleCatalog, DEFAULT_FILTERS, null, '   ')
+    expect(matches).toBe(0)
+    expect(nodes.every((node) => !node.data.faded)).toBe(true)
+  })
 })
+

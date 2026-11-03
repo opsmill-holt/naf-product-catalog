@@ -8,6 +8,7 @@ import { ProductDetails } from './components/ProductDetails'
 import { countBlockProducts, parseFilters, serializeFilters, type Filters } from './filters'
 import { matchesSearch, visibleProducts, type Focus } from './graph/buildGraph'
 import { CatalogGraph, type View } from './graph/CatalogGraph'
+import type { Arrange } from './graph/layout'
 import { slugify } from './graph/logos'
 import { MadeBy } from './components/MadeBy'
 import { MyStack } from './components/MyStack'
@@ -42,6 +43,9 @@ export default function App() {
   const narrow = useNarrow()
   const myTools = useMyTools()
   const [search, setSearch] = useState('')
+  const [arrange, setArrange] = useState<Arrange>(() =>
+    new URLSearchParams(window.location.search).get('arrange') === 'columns' ? 'columns' : 'groups',
+  )
   const [pendingProduct, setPendingProduct] = useState(() => new URLSearchParams(window.location.search).get('product'))
 
   // Open the product named in the page address once the catalog has loaded.
@@ -73,10 +77,11 @@ export default function App() {
     if (pendingProduct) return
     const params = new URLSearchParams(serializeFilters(filters))
     if (view === 'framework') params.set('view', 'framework')
+    if (arrange === 'columns') params.set('arrange', 'columns')
     if (selected) params.set('product', slugify(selected.full_name))
     const search = params.toString()
     window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
-  }, [filters, selected, pendingProduct, view])
+  }, [filters, selected, pendingProduct, view, arrange])
 
   // Escape closes the block panel of the framework view, as it clears the focus in the graph.
   useEffect(() => {
@@ -175,6 +180,16 @@ export default function App() {
                   </button>
                 </div>
                 {view === 'graph' && (
+                  <div className="view-toggle arrange-toggle" role="group" aria-label="Arrange products">
+                    <span className="arrange-label">Arrange</span>
+                    {(['groups', 'columns'] as const).map((option) => (
+                      <button key={option} type="button" className="chip" aria-pressed={arrange === option} onClick={() => setArrange(option)}>
+                        {option === 'groups' ? 'Groups' : 'Columns'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {view === 'graph' && (
                   <div className="graph-search">
                     <input
                       type="search"
@@ -237,6 +252,7 @@ export default function App() {
                 myTools={stack}
                 onToggleTool={myTools.toggle}
                 search={view === 'graph' ? search : ''}
+                arrange={arrange}
                 onBlockClick={(name) => {
                   setFilters({ ...filters, block: filters.block === name ? null : name })
                   setFocus(null)

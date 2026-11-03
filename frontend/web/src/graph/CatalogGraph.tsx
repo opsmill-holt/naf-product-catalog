@@ -5,6 +5,7 @@ import { countBlockProducts, type Filters } from '../filters'
 import { blockStyle } from './blockStyle'
 import { buildGraph, type Focus, type GraphNode } from './buildGraph'
 import { frameworkLayout, type Box } from './framework'
+import type { Arrange } from './layout'
 import { graphBounds, morphGraph } from './morph'
 import { edgeTypes, nodeTypes } from './nodes'
 
@@ -21,6 +22,7 @@ interface Props {
   myTools: string[]
   onToggleTool: (fullName: string) => void
   search: string
+  arrange: Arrange
   onBlockClick: (name: string) => void // in the graph view, the same as the block's filter chip
 }
 
@@ -28,8 +30,8 @@ const MORPH_MS = 550
 // Width the block panel (.details) covers on the right of the canvas, with its margins.
 const PANEL_SPACE = 432
 const FRAME_PADDING = 32
-// Height kept free above the diagram for the view buttons in the top-left corner of the canvas.
-const TOOLBAR_SPACE = 44
+const MIN_ZOOM = 0.1
+const MAX_ZOOM = 2.5
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -56,23 +58,33 @@ function useMorphProgress(target: number) {
   return progress
 }
 
-// The viewport that fits the diagram into the canvas, left of the block panel when it is open.
-function frameworkViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box, panelOpen: boolean) {
-  const rect = canvas.current?.getBoundingClientRect()
-  if (!rect) return null
+// Height at the top of the canvas covered by the toolbar (view buttons, arrangement, search), which
+// wraps onto more rows on narrow screens.
+function toolbarSpace(rect: DOMRect, canvas: HTMLDivElement) {
+  const toolbar = canvas.parentElement?.querySelector('.graph-toolbar')
+  return toolbar ? Math.max(0, toolbar.getBoundingClientRect().bottom - rect.top) : 0
+}
+
+// The viewport that fits bounds into the canvas below the toolbar, and left of the block panel when
+// panelOpen is set.
+function fitViewport(canvas: RefObject<HTMLDivElement | null>, bounds: Box, panelOpen = false) {
+  const element = canvas.current
+  const rect = element?.getBoundingClientRect()
+  if (!element || !rect) return null
+  const top = toolbarSpace(rect, element)
   const width = rect.width - (panelOpen && rect.width > PANEL_SPACE * 2 ? PANEL_SPACE : 0) - 2 * FRAME_PADDING
-  const height = rect.height - 2 * FRAME_PADDING - TOOLBAR_SPACE
-  const zoom = Math.min(width / bounds.width, height / bounds.height)
+  const height = rect.height - 2 * FRAME_PADDING - top
+  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(width / bounds.width, height / bounds.height)))
   return {
     x: FRAME_PADDING + (width - bounds.width * zoom) / 2 - bounds.x * zoom,
-    y: FRAME_PADDING + TOOLBAR_SPACE + (height - bounds.height * zoom) / 2 - bounds.y * zoom,
+    y: FRAME_PADDING + top + (height - bounds.height * zoom) / 2 - bounds.y * zoom,
     zoom,
   }
 }
 
-function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, onToggleTool, search, onBlockClick, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
+function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelectBlock, myTools, onToggleTool, search, arrange, onBlockClick, canvas }: Props & { canvas: RefObject<HTMLDivElement | null> }) {
   const framework = view === 'framework'
-  const graph = useMemo(() => buildGraph(catalog, filters, focus, search), [catalog, filters, focus, search])
+  const graph = useMemo(() => buildGraph(catalog, filters, focus, search, arrange), [catalog, filters, focus, search, arrange])
   const diagram = useMemo(() => frameworkLayout(catalog.blocks.map((block) => block.name)), [catalog])
   const counts = useMemo(
     () => Object.fromEntries(catalog.blocks.map((block) => [block.name, countBlockProducts(catalog, filters, block.name)])),
@@ -93,19 +105,28 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
       }),
     [morphed.nodes, myTools, onToggleTool],
   )
-  const { fitBounds, fitView, setViewport } = useReactFlow()
+  const { setViewport } = useReactFlow()
 
   const fitFramework = useCallback(
     (duration: number) => {
-      const viewport = frameworkViewport(canvas, diagram.bounds, selectedBlock !== null)
+      const viewport = fitViewport(canvas, diagram.bounds, selectedBlock !== null)
       if (viewport) setViewport(viewport, { duration })
     },
     [canvas, diagram.bounds, selectedBlock, setViewport],
   )
+  // The graph's bounds, for fitting the graph view; kept in a ref so the fit effects run only when
+  // the view, the block filter or the arrangement changes.
+  const graphBox = useRef(graphBounds(graph.nodes))
+  const fitGraph = useCallback(
+    (duration: number) => {
+      const viewport = fitViewport(canvas, graphBox.current)
+      if (viewport) setViewport(viewport, { duration })
+    },
+    [canvas, setViewport],
+  )
 
   // Move the viewport together with the blocks when the view changes, and when the panel opens or closes.
   // Refs, so that a filter change does not run these effects; the block-filter effect refits instead.
-  const graphBox = useRef(graphBounds(graph.nodes))
   const inFramework = useRef(framework)
   useLayoutEffect(() => {
     graphBox.current = graphBounds(graph.nodes)
@@ -117,17 +138,17 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
     firstRun.current = false
     const timer = window.setTimeout(() => {
       if (framework) fitFramework(duration)
-      else fitBounds(graphBox.current, { padding: 0.08, duration })
+      else fitGraph(duration)
     }, 50)
     return () => window.clearTimeout(timer)
-  }, [framework, fitFramework, fitBounds])
+  }, [framework, fitFramework, fitGraph])
 
-  // Refit when the set of blocks changes (all blocks or a single block).
+  // Refit when the set of blocks changes (all blocks or a single block), or the arrangement does.
   useEffect(() => {
     if (inFramework.current) return
-    const timer = window.setTimeout(() => fitView({ padding: 0.08, duration: 300 }), 50)
+    const timer = window.setTimeout(() => fitGraph(300), 50)
     return () => window.clearTimeout(timer)
-  }, [filters.block, fitView])
+  }, [filters.block, arrange, fitGraph])
 
   useEffect(() => {
     if (!framework) return
@@ -161,8 +182,8 @@ function Graph({ catalog, filters, focus, onFocus, view, selectedBlock, onSelect
       onPaneClick={() => (framework ? onSelectBlock(null) : onFocus(null))}
       fitView={!framework}
       fitViewOptions={{ padding: 0.08 }}
-      minZoom={0.1}
-      maxZoom={2.5}
+      minZoom={MIN_ZOOM}
+      maxZoom={MAX_ZOOM}
       panOnDrag={!framework}
       zoomOnScroll={!framework}
       zoomOnPinch={!framework}

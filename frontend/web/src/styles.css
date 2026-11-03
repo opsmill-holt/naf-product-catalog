@@ -1866,3 +1866,16 @@ button:disabled {
     width: 11rem;
   }
 }
+
+.arrange-toggle {
+  align-items: center;
+}
+
+.arrange-label {
+  padding: 0 0.3rem 0 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

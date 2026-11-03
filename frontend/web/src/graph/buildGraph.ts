@@ -3,7 +3,7 @@
 import type { Edge, Node } from '@xyflow/react'
 import type { Catalog, Extent, Product } from '../api'
 import type { Filters } from '../filters'
-import { BLOCK_SIZE, PRODUCT_SIZE, layoutGraph } from './layout'
+import { BLOCK_SIZE, PRODUCT_SIZE, layoutGraph, type Arrange } from './layout'
 
 export type Focus = { kind: 'product'; id: string } | { kind: 'block'; name: string } | null
 
@@ -39,7 +39,7 @@ export function visibleProducts(catalog: Catalog, filters: Filters) {
     .filter((entry) => entry.claims.length > 0)
 }
 
-export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus, search = '') {
+export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus, search = '', arrange: Arrange = 'groups') {
   const blockNames = catalog.blocks
     .map((block) => block.name)
     .filter((name) => !filters.block || name === filters.block)
@@ -51,8 +51,10 @@ export function buildGraph(catalog: Catalog, filters: Filters, focus: Focus, sea
     blockNames,
     catalog.products.map((product) => ({
       id: product.id,
+      name: product.full_name,
       blocks: product.claims.map((claim) => claim.block).filter((name) => visibleBlocks.has(name)),
     })),
+    arrange,
   )
 
   const visible = visibleProducts(catalog, filters)

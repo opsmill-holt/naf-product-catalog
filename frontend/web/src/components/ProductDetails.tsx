@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { LICENSE_LABELS, STATUS_LABELS, type Product, type Requirement, type Source } from '../api'
 import { blockStyle } from '../graph/blockStyle'
 import { Logo } from '../graph/Logo'
+import { CheckIcon, PlusIcon } from './icons'
 import { Requirements } from './Requirements'
 
 function hostOf(url: string): string {
@@ -52,10 +53,6 @@ export function ProductDetails({ product, requirements, inStack, onToggleStack, 
         </div>
       </header>
 
-      <button type="button" className={`button stack-toggle${inStack ? ' stack-toggle-on' : ''}`} aria-pressed={inStack} onClick={onToggleStack}>
-        {inStack ? '✓ In my stack. Click to remove' : '+ I use this'}
-      </button>
-
       <div className="badges">
         <span className={`badge badge-status-${product.status}`}>
           {STATUS_LABELS[product.status]}
@@ -82,6 +79,12 @@ export function ProductDetails({ product, requirements, inStack, onToggleStack, 
           )}
         </p>
       )}
+
+      <button type="button" className={`stack-toggle${inStack ? ' stack-toggle-on' : ''}`} aria-pressed={inStack} onClick={onToggleStack}>
+        {inStack ? <CheckIcon /> : <PlusIcon />}
+        <span>{inStack ? 'In my stack' : 'Add to my stack'}</span>
+        {inStack && <span className="stack-toggle-hint">Remove</span>}
+      </button>
 
       <section className="details-section">
         <h3>What it does</h3>

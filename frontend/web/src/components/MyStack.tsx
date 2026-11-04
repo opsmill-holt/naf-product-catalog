@@ -7,6 +7,7 @@ import { useState, type CSSProperties, type FormEvent } from 'react'
 import { submitStack, type Catalog, type SubmissionResult } from '../api'
 import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
 import { useStackReview } from '../stackReview'
+import { CheckIcon, CloseIcon } from './icons'
 
 interface Props {
   catalog: Catalog
@@ -80,23 +81,24 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
   return (
     <>
       {review?.status === 'pending' && (
-        <span className="review-group">
-          <span className="review-indicator" role="status">
+        <span className="review-pill review-pill-pending">
+          <span className="review-pill-main" role="status">
             <span className="spinner" aria-hidden="true" />
             Claude is reviewing your stack…
           </span>
-          <button type="button" className="review-clear" aria-label="Stop waiting for my stack review" title="Stop waiting" onClick={dismiss}>
-            ×
+          <button type="button" className="review-pill-clear" aria-label="Stop waiting for my stack review" title="Stop waiting" onClick={dismiss}>
+            <CloseIcon />
           </button>
         </span>
       )}
       {review?.status === 'done' && (
-        <span className="review-group">
-          <button type="button" className="button review-button" onClick={openReview}>
+        <span className="review-pill">
+          <button type="button" className="review-pill-main" onClick={openReview}>
+            <CheckIcon />
             View my stack review
           </button>
-          <button type="button" className="review-clear" aria-label="Clear my stack review" title="Clear review" onClick={dismiss}>
-            ×
+          <button type="button" className="review-pill-clear" aria-label="Clear my stack review" title="Clear review" onClick={dismiss}>
+            <CloseIcon />
           </button>
         </span>
       )}
@@ -214,7 +216,7 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
             <span>The review of your stack is not available right now. Your stack was still sent.</span>
           )}
           <button type="button" className="review-toast-close" aria-label="Close message" onClick={markSeen}>
-            ×
+            <CloseIcon />
           </button>
         </div>
       )}

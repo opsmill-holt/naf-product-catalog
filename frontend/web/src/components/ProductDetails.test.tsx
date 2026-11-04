@@ -97,7 +97,7 @@ describe('ProductDetails', () => {
     const { rerender } = render(
       <ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={onToggleStack} onClose={() => {}} />,
     )
-    await userEvent.click(screen.getByRole('button', { name: '+ I use this' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add to my stack' }))
     expect(onToggleStack).toHaveBeenCalledOnce()
     rerender(<ProductDetails product={product} requirements={requirements} inStack onToggleStack={onToggleStack} onClose={() => {}} />)
     expect(screen.getByRole('button', { name: /In my stack/ }).getAttribute('aria-pressed')).toBe('true')

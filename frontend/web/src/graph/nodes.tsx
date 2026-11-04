@@ -4,6 +4,7 @@ import { STATUS_LABELS } from '../api'
 import { blockStyle } from './blockStyle'
 import type { BlockNode as BlockNodeType, CoverageEdge, ProductNode as ProductNodeType } from './buildGraph'
 import { FRAMEWORK_DIAGRAM, INFRASTRUCTURE_ITEMS } from './framework'
+import { CheckIcon, PlusIcon } from '../components/icons'
 import { Logo } from './Logo'
 
 // Edges attach to the centre of each node, so lines can arrive from any side.
@@ -87,7 +88,7 @@ export function ProductNode({ data }: NodeProps<ProductNodeType>) {
             data.onToggleMine?.()
           }}
         >
-          {data.mine ? '✓' : '+'}
+          {data.mine ? <CheckIcon size={10} /> : <PlusIcon size={10} />}
         </button>
       )}
     </div>

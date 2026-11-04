@@ -187,13 +187,7 @@ button:disabled {
   box-shadow: 0 0 12px color-mix(in srgb, var(--chip-color) 25%, transparent);
 }
 
-.chip-status-active {
-  --chip-color: var(--ok);
-}
 
-.chip-status-discontinued {
-  --chip-color: var(--error);
-}
 
 .chip-block {
   --chip-color: var(--block-color);
@@ -339,10 +333,6 @@ button:disabled {
   box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(147, 197, 253, 0.35);
 }
 
-.graph-product.status-discontinued {
-  border-style: dashed;
-  background: var(--surface);
-}
 
 .logo-tile {
   flex: none;
@@ -403,12 +393,6 @@ button:disabled {
   -webkit-box-orient: vertical;
 }
 
-.graph-product-status {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--error);
-}
 
 .faded {
   opacity: 0.12;
@@ -499,17 +483,7 @@ button:disabled {
   text-decoration: none;
 }
 
-.badge-status-active {
-  color: var(--ok);
-  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
-  background: color-mix(in srgb, var(--ok) 12%, transparent);
-}
 
-.badge-status-discontinued {
-  color: var(--error);
-  border-color: color-mix(in srgb, var(--error) 50%, transparent);
-  background: color-mix(in srgb, var(--error) 12%, transparent);
-}
 
 .badge-muted {
   color: var(--text-muted);

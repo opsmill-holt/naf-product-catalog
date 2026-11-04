@@ -1,11 +1,13 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_FILTERS } from '../filters'
-import { sampleCatalog } from '../graph/fixtures'
+import { activeOnly, DEFAULT_FILTERS } from '../filters'
+import { sampleCatalog as allProducts } from '../graph/fixtures'
 import { FrameworkView } from './FrameworkView'
 
 afterEach(cleanup)
+
+const sampleCatalog = activeOnly(allProducts)
 
 const rowOf = (name: string) => screen.getByRole('button', { name: new RegExp(name) }).parentElement
 

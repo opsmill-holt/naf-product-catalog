@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
-import { STATUS_LABELS, type Catalog, type Extent, type Status } from '../api'
-import { ALL_EXTENTS, ALL_STATUSES, countBlockProducts, DEFAULT_FILTERS, serializeFilters, type Filters } from '../filters'
+import type { Catalog, Extent } from '../api'
+import { ALL_EXTENTS, countBlockProducts, DEFAULT_FILTERS, serializeFilters, type Filters } from '../filters'
 import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
 
 interface Props {
@@ -16,32 +16,12 @@ function toggle<T>(list: T[], item: T): T[] {
 
 export function FilterBar({ catalog, filters, onChange }: Props) {
   const withClaims = catalog.products.filter((product) => product.claims.length > 0)
-  const statusCount = (status: Status) => withClaims.filter((product) => product.status === status).length
   const extentCount = (extent: Extent) =>
-    withClaims.filter(
-      (product) => filters.statuses.includes(product.status) && product.claims.some((claim) => claim.extent === extent),
-    ).length
+    withClaims.filter((product) => product.claims.some((claim) => claim.extent === extent)).length
   const isDefault = serializeFilters(filters) === serializeFilters(DEFAULT_FILTERS)
 
   return (
     <div className="filters" role="group" aria-label="Filters">
-      <div className="filter-group">
-        <span className="filter-label">Status</span>
-        {ALL_STATUSES.map((status) => (
-          <button
-            key={status}
-            type="button"
-            className={`chip chip-status-${status}`}
-            aria-pressed={filters.statuses.includes(status)}
-            onClick={() => onChange({ ...filters, statuses: toggle(filters.statuses, status) })}
-          >
-            <span className="chip-dot" />
-            {STATUS_LABELS[status]}
-            <span className="chip-count">{statusCount(status)}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="filter-group">
         <span className="filter-label">Coverage</span>
         {ALL_EXTENTS.map((extent) => (

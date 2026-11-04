@@ -1,6 +1,5 @@
 import { BaseEdge, getBezierPath, Handle, Position, type EdgeProps, type NodeProps } from '@xyflow/react'
 import type { CSSProperties } from 'react'
-import { STATUS_LABELS } from '../api'
 import { blockStyle } from './blockStyle'
 import type { BlockNode as BlockNodeType, CoverageEdge, ProductNode as ProductNodeType } from './buildGraph'
 import { FRAMEWORK_DIAGRAM, INFRASTRUCTURE_ITEMS } from './framework'
@@ -67,14 +66,13 @@ export function ProductNode({ data }: NodeProps<ProductNodeType>) {
   const { product } = data
   return (
     <div
-      className={`graph-product status-${product.status}${data.faded ? ' faded' : ''}${data.mine ? ' mine' : ''}`}
+      className={`graph-product${data.faded ? ' faded' : ''}${data.mine ? ' mine' : ''}`}
       title={data.mine ? `${product.full_name} (in my stack)` : product.full_name}
     >
       {centreHandles}
       <Logo fullName={product.full_name} name={product.name} />
       <span className="graph-product-text">
         <span className="graph-product-name">{product.name}</span>
-        {product.status !== 'active' && <span className="graph-product-status">{STATUS_LABELS[product.status]}</span>}
       </span>
       {data.onToggleMine && (
         // nodrag and stopPropagation: the button adds or removes the product without moving it or opening its panel.

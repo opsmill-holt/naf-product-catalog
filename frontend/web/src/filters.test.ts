@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countBlockProducts, DEFAULT_FILTERS, parseFilters, serializeFilters } from './filters'
+import { activeOnly, countBlockProducts, DEFAULT_FILTERS, parseFilters, serializeFilters } from './filters'
 import { sampleCatalog } from './graph/fixtures'
 
 describe('filters', () => {
@@ -7,10 +7,17 @@ describe('filters', () => {
 
 
   it('reads and writes the page address', () => {
-    const filters = { statuses: ['active', 'discontinued'] as const, extents: ['full'] as const, block: 'Intent' }
-    const search = serializeFilters({ ...filters, statuses: [...filters.statuses], extents: [...filters.extents] })
-    expect(search).toBe('status=active%2Cdiscontinued&extent=full&block=Intent')
-    expect(parseFilters(search)).toEqual({ statuses: ['active', 'discontinued'], extents: ['full'], block: 'Intent' })
+    const search = serializeFilters({ extents: ['full'], block: 'Intent' })
+    expect(search).toBe('extent=full&block=Intent')
+    expect(parseFilters(search)).toEqual({ extents: ['full'], block: 'Intent' })
+  })
+
+  it('ignores the status filter of older links', () => {
+    expect(parseFilters('status=active%2Cdiscontinued&block=Intent')).toEqual({ ...DEFAULT_FILTERS, block: 'Intent' })
+  })
+
+  it('keeps only active products for the web app', () => {
+    expect(activeOnly(sampleCatalog).products.map((product) => product.id)).toEqual(['a', 'c', 'd'])
   })
 
   it('leaves default filters out of the page address', () => {
@@ -22,9 +29,10 @@ describe('filters', () => {
     expect(parseFilters('status=bogus&extent=nope')).toEqual(DEFAULT_FILTERS)
   })
 
-  it('counts the products that cover a block with the selected statuses and extents', () => {
-    expect(countBlockProducts(sampleCatalog, DEFAULT_FILTERS, 'Collector')).toBe(1)
-    expect(countBlockProducts(sampleCatalog, { ...DEFAULT_FILTERS, statuses: ['active', 'discontinued'] }, 'Collector')).toBe(2)
-    expect(countBlockProducts(sampleCatalog, { ...DEFAULT_FILTERS, extents: ['full'] }, 'Observability')).toBe(0)
+  it('counts the products that cover a block with the selected extents', () => {
+    const active = activeOnly(sampleCatalog)
+    expect(countBlockProducts(active, DEFAULT_FILTERS, 'Collector')).toBe(1)
+    expect(countBlockProducts(active, { ...DEFAULT_FILTERS, extents: ['partial'] }, 'Observability')).toBe(1)
+    expect(countBlockProducts(active, { ...DEFAULT_FILTERS, extents: ['full'] }, 'Observability')).toBe(0)
   })
 })

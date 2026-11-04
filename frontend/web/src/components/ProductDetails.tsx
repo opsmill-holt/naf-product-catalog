@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { LICENSE_LABELS, STATUS_LABELS, type Product, type Requirement, type Source } from '../api'
+import { LICENSE_LABELS, type Product, type Requirement, type Source } from '../api'
 import { blockStyle } from '../graph/blockStyle'
 import { Logo } from '../graph/Logo'
 import { CheckIcon, PlusIcon } from './icons'
@@ -54,10 +54,6 @@ export function ProductDetails({ product, requirements, inStack, onToggleStack, 
       </header>
 
       <div className="badges">
-        <span className={`badge badge-status-${product.status}`}>
-          {STATUS_LABELS[product.status]}
-          {product.status_date && ` · ${product.status_date.slice(0, 10)}`}
-        </span>
         <span className={`badge badge-license${product.license_model ? '' : ' badge-muted'}`}>
           {product.license_model ? LICENSE_LABELS[product.license_model] : 'License not stated'}
         </span>
@@ -65,18 +61,11 @@ export function ProductDetails({ product, requirements, inStack, onToggleStack, 
           Home page ↗
         </a>
       </div>
-      {(product.sources.status.length > 0 || product.sources.license_model.length > 0) && (
+      {product.sources.license_model.length > 0 && (
         <p className="details-row-sources">
-          {product.sources.status.length > 0 && (
-            <span>
-              Status: <SourceLinks sources={product.sources.status} />
-            </span>
-          )}
-          {product.sources.license_model.length > 0 && (
-            <span>
-              License: <SourceLinks sources={product.sources.license_model} />
-            </span>
-          )}
+          <span>
+            License: <SourceLinks sources={product.sources.license_model} />
+          </span>
         </p>
       )}
 

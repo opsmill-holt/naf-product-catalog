@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FILTERS } from '../filters'
+import { activeOnly, DEFAULT_FILTERS } from '../filters'
 import { buildGraph } from './buildGraph'
-import { sampleCatalog } from './fixtures'
+import { sampleCatalog as allProducts } from './fixtures'
+
+// The app builds the graph from the active products only.
+const sampleCatalog = activeOnly(allProducts)
 
 const ids = (items: { id: string }[]) => items.map((item) => item.id).sort()
 
@@ -20,10 +23,10 @@ describe('buildGraph', () => {
   })
 
   it('leaves out products with no visible claim', () => {
-    const { nodes } = buildGraph(sampleCatalog, { ...DEFAULT_FILTERS, extents: ['full'], statuses: ['active'] }, null)
+    const { nodes } = buildGraph(sampleCatalog, { ...DEFAULT_FILTERS, extents: ['full'] }, null)
     expect(ids(nodes.filter((node) => node.type === 'product'))).toEqual(['a', 'c'])
-    const onlyPartial = buildGraph(sampleCatalog, { statuses: ['discontinued'], extents: ['partial'], block: null }, null)
-    expect(ids(onlyPartial.nodes.filter((node) => node.type === 'product'))).toEqual(['b'])
+    const onlyPartial = buildGraph(sampleCatalog, { extents: ['partial'], block: null }, null)
+    expect(ids(onlyPartial.nodes.filter((node) => node.type === 'product'))).toEqual(['a'])
   })
 
   it('shows a single block with only its products', () => {

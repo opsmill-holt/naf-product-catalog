@@ -5,7 +5,7 @@ import { BlockDetails } from './components/BlockDetails'
 import { FilterBar } from './components/FilterBar'
 import { FrameworkView } from './components/FrameworkView'
 import { ProductDetails } from './components/ProductDetails'
-import { countBlockProducts, parseFilters, serializeFilters, type Filters } from './filters'
+import { activeOnly, countBlockProducts, parseFilters, serializeFilters, type Filters } from './filters'
 import { matchesSearch, visibleProducts, type Focus } from './graph/buildGraph'
 import { CatalogGraph, type View } from './graph/CatalogGraph'
 import type { Arrange } from './graph/layout'
@@ -34,6 +34,8 @@ function useNarrow() {
 
 export default function App() {
   const catalog = useQuery({ queryKey: ['catalog'], queryFn: fetchCatalog, staleTime: 60_000 })
+  // Every view shows only active products; the submission form gets the whole catalog.
+  const shown = useMemo(() => (catalog.data ? activeOnly(catalog.data) : undefined), [catalog.data])
   const [filters, setFilters] = useState<Filters>(() => parseFilters(window.location.search))
   const [focus, setFocus] = useState<Focus>(null)
   const [view, setView] = useState<View>(() =>
@@ -50,27 +52,27 @@ export default function App() {
 
   // Open the product named in the page address once the catalog has loaded.
   useEffect(() => {
-    if (!pendingProduct || !catalog.data) return
-    const product = catalog.data.products.find((item) => slugify(item.full_name) === pendingProduct)
+    if (!pendingProduct || !shown) return
+    const product = shown.products.find((item) => slugify(item.full_name) === pendingProduct)
     if (product) {
       setFocus({ kind: 'product', id: product.id })
       setView('graph')
     }
     setPendingProduct(null)
-  }, [pendingProduct, catalog.data])
+  }, [pendingProduct, shown])
   const [submitView, setSubmitView] = useState(isSubmitView)
 
   const selectedId = focus?.kind === 'product' ? focus.id : null
-  const selected = catalog.data?.products.find((product) => product.id === selectedId) ?? null
-  const selectedBlock = catalog.data?.blocks.find((block) => block.name === frameworkBlock) ?? null
+  const selected = shown?.products.find((product) => product.id === selectedId) ?? null
+  const selectedBlock = shown?.blocks.find((block) => block.name === frameworkBlock) ?? null
   const matches = useMemo(
-    () => (catalog.data && search.trim() ? visibleProducts(catalog.data, filters).filter((entry) => matchesSearch(entry.product, search)).length : 0),
-    [catalog.data, filters, search],
+    () => (shown && search.trim() ? visibleProducts(shown, filters).filter((entry) => matchesSearch(entry.product, search)).length : 0),
+    [shown, filters, search],
   )
   // Marks for products that are no longer in the catalog are ignored.
   const stack = useMemo(
-    () => myTools.tools.filter((tool) => catalog.data?.products.some((product) => product.full_name === tool)),
-    [myTools.tools, catalog.data],
+    () => myTools.tools.filter((tool) => shown?.products.some((product) => product.full_name === tool)),
+    [myTools.tools, shown],
   )
 
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function App() {
             </a>
           ) : (
             <>
-              {catalog.data && <MyStack catalog={catalog.data} tools={stack} onRemove={myTools.toggle} onClear={myTools.clear} />}
+              {shown && <MyStack catalog={shown} tools={stack} onRemove={myTools.toggle} onClear={myTools.clear} />}
               <a className="button" href="#submit">
                 Submit a product
               </a>
@@ -137,10 +139,10 @@ export default function App() {
         </>
       )}
 
-      {catalog.data && !submitView && (
+      {shown && !submitView && (
         <main>
           <FilterBar
-            catalog={catalog.data}
+            catalog={shown}
             filters={filters}
             onChange={(next) => {
               setFilters(next)
@@ -211,7 +213,7 @@ export default function App() {
               </div>
               {view === 'graph' && (
                 <StackList
-                  products={stack.map((tool) => catalog.data.products.find((product) => product.full_name === tool)!)}
+                  products={stack.map((tool) => shown.products.find((product) => product.full_name === tool)!)}
                   onOpen={(product) => setFocus({ kind: 'product', id: product.id })}
                   onRemove={myTools.toggle}
                 />
@@ -235,14 +237,14 @@ export default function App() {
             )}
             {view === 'framework' && narrow ? (
               <FrameworkView
-                catalog={catalog.data}
+                catalog={shown}
                 filters={filters}
                 selectedBlock={frameworkBlock}
                 onSelectBlock={setFrameworkBlock}
               />
             ) : (
               <CatalogGraph
-                catalog={catalog.data}
+                catalog={shown}
                 filters={filters}
                 focus={focus}
                 onFocus={setFocus}
@@ -262,7 +264,7 @@ export default function App() {
             {view === 'graph' && selected && (
               <ProductDetails
                 product={selected}
-                requirements={catalog.data.requirements}
+                requirements={shown.requirements}
                 inStack={stack.includes(selected.full_name)}
                 onToggleStack={() => myTools.toggle(selected.full_name)}
                 onClose={() => setFocus(null)}
@@ -271,8 +273,8 @@ export default function App() {
             {view === 'framework' && selectedBlock && (
               <BlockDetails
                 block={selectedBlock}
-                requirements={catalog.data.requirements}
-                productCount={countBlockProducts(catalog.data, filters, selectedBlock.name)}
+                requirements={shown.requirements}
+                productCount={countBlockProducts(shown, filters, selectedBlock.name)}
                 onShowProducts={() => {
                   setFilters({ ...filters, block: selectedBlock.name })
                   setFrameworkBlock(null)

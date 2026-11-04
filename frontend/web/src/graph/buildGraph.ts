@@ -29,7 +29,6 @@ export const matchesSearch = (product: Product, search: string) => {
 // The products the filters show, each with the claims that are drawn.
 export function visibleProducts(catalog: Catalog, filters: Filters) {
   return catalog.products
-    .filter((product) => filters.statuses.includes(product.status))
     .map((product) => ({
       product,
       claims: product.claims.filter(

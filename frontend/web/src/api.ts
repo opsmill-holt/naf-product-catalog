@@ -140,11 +140,6 @@ async function post(path: string, body: unknown): Promise<SubmissionResult> {
   return { ok: false, message }
 }
 
-export const STATUS_LABELS: Record<Status, string> = {
-  active: 'Active',
-  discontinued: 'Discontinued',
-}
-
 export const LICENSE_LABELS: Record<LicenseModel, string> = {
   open_source: 'Open source',
   open_core: 'Open core',

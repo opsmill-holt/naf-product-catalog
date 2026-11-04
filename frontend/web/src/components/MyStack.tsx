@@ -80,15 +80,25 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
   return (
     <>
       {review?.status === 'pending' && (
-        <span className="review-indicator" role="status">
-          <span className="spinner" aria-hidden="true" />
-          Claude is reviewing your stack…
+        <span className="review-group">
+          <span className="review-indicator" role="status">
+            <span className="spinner" aria-hidden="true" />
+            Claude is reviewing your stack…
+          </span>
+          <button type="button" className="review-clear" aria-label="Stop waiting for my stack review" title="Stop waiting" onClick={dismiss}>
+            ×
+          </button>
         </span>
       )}
       {review?.status === 'done' && (
-        <button type="button" className="button review-button" onClick={openReview}>
-          View my stack review
-        </button>
+        <span className="review-group">
+          <button type="button" className="button review-button" onClick={openReview}>
+            View my stack review
+          </button>
+          <button type="button" className="review-clear" aria-label="Clear my stack review" title="Clear review" onClick={dismiss}>
+            ×
+          </button>
+        </span>
       )}
       {tools.length > 0 && (
         <div className="stack-bar" role="region" aria-label="My stack">
@@ -229,7 +239,7 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                   dismiss()
                 }}
               >
-                Remove the review from this page
+                Clear this review
               </button>
             </div>
           </div>

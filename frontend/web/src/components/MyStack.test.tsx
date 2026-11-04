@@ -147,4 +147,24 @@ describe('MyStack', () => {
     expect(container.innerHTML).toBe('')
     expect(window.localStorage.getItem('catalog.stackReview')).toBeNull()
   }, 10_000)
+
+  it('clears a finished review from the header', async () => {
+    window.localStorage.setItem('catalog.stackReview', JSON.stringify({ id: 'abc', startedAt: Date.now(), status: 'done', text: 'Ready.', seen: true }))
+    const { container } = render(<MyStack catalog={sampleCatalog} tools={[]} onRemove={() => {}} onClear={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Clear my stack review' }))
+    expect(container.innerHTML).toBe('')
+    expect(window.localStorage.getItem('catalog.stackReview')).toBeNull()
+  })
+
+  it('stops waiting for a review from the header', async () => {
+    window.localStorage.setItem('catalog.stackReview', JSON.stringify({ id: 'abc', startedAt: Date.now(), seen: false }))
+    const fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ status: 'pending', text: null }) })
+    vi.stubGlobal('fetch', fetch)
+    const { container } = render(<MyStack catalog={sampleCatalog} tools={[]} onRemove={() => {}} onClear={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Stop waiting for my stack review' }))
+    expect(container.innerHTML).toBe('')
+    await new Promise((resolve) => setTimeout(resolve, 3500))
+    expect(fetch).not.toHaveBeenCalled()
+  }, 10_000)
 })
+

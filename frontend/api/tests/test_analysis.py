@@ -36,7 +36,13 @@ def test_input_has_only_the_chosen_products_and_the_status_of_every_block() -> N
     facts = build_input(CATALOG, ["Example Tool"], ["Executor"])
     assert [product["name"] for product in facts["products"]] == ["Example Tool"]
     assert facts["products"][0]["coverage"] == [
-        {"block": "Collector", "extent": "partial", "note": "Only SNMP.", "requirements_not_met": ["Reads live data"]}
+        {
+            "block": "Collector",
+            "extent": "partial",
+            "note": "Only SNMP.",
+            "requirements_met": [],
+            "requirements_not_met": ["Reads live data"],
+        }
     ]
     assert {block["name"]: block["status"] for block in facts["blocks"]} == {
         "Collector": "covered",

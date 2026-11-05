@@ -68,6 +68,11 @@ def build_input(catalog: dict[str, Any], products: list[str], no_tool_blocks: li
                         "block": claim["block"],
                         "extent": claim["extent"] if claim["assessed"] else "not assessed",
                         "note": claim["note"],
+                        "requirements_met": [
+                            summaries.get(verdict["requirement"], verdict["requirement"])
+                            for verdict in claim["verdicts"]
+                            if verdict["verdict"] == "met"
+                        ],
                         "requirements_not_met": [
                             summaries.get(verdict["requirement"], verdict["requirement"])
                             for verdict in claim["verdicts"]

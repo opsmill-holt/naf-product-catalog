@@ -1,4 +1,4 @@
-// Small line icons drawn in the current text colour. Unlike the +, ✓ and × characters, they sit at
+// Small line icons drawn in the current text colour, and the waiting dots. Unlike the +, ✓ and × characters, they sit at
 // the exact centre of round buttons, whatever the font.
 
 const base = {
@@ -29,4 +29,13 @@ export const CloseIcon = ({ size = 12 }: { size?: number }) => (
   <svg {...base} width={size} height={size}>
     <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
   </svg>
+)
+
+// Three dots that pulse one after another, after text such as "Sending", to show that work is going on.
+export const WaitingDots = () => (
+  <span className="waiting-dots" aria-hidden="true">
+    <span>.</span>
+    <span>.</span>
+    <span>.</span>
+  </span>
 )

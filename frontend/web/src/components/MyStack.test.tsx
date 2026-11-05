@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { sampleCatalog } from '../graph/fixtures'
+import { downloadReview } from '../stackReview'
 import { MyStack } from './MyStack'
 
 afterEach(() => {
@@ -106,9 +107,9 @@ describe('MyStack', () => {
     render(<MyStack catalog={sampleCatalog} tools={tools} onRemove={() => {}} onClear={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: 'Submit my stack' }))
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
-    expect(await screen.findByText(/Claude is reviewing your stack\. You can close this window/)).toBeTruthy()
+    expect(await screen.findByText(/developed by OpsMill’s Solution Architects is reviewing your stack\. You can close this window/)).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Done' }))
-    expect(screen.getByText('Claude is reviewing your stack…')).toBeTruthy()
+    expect(screen.getByText(/AI skill is reviewing your stack/)).toBeTruthy()
     expect(await screen.findByText('Your stack review is ready.', {}, { timeout: 8000 })).toBeTruthy()
     expect(fetch).toHaveBeenCalledWith('/api/analyses/abc')
     await userEvent.click(screen.getByRole('button', { name: 'View review' }))
@@ -135,7 +136,7 @@ describe('MyStack', () => {
     window.localStorage.setItem('catalog.stackReview', JSON.stringify({ id: 'abc', startedAt: Date.now(), seen: false }))
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ status: 'done', text: 'Ready.' }) }))
     render(<MyStack catalog={sampleCatalog} tools={[]} onRemove={() => {}} onClear={() => {}} />)
-    expect(screen.getByText('Claude is reviewing your stack…')).toBeTruthy()
+    expect(screen.getByText(/AI skill is reviewing your stack/)).toBeTruthy()
     expect(await screen.findByText('Your stack review is ready.', {}, { timeout: 6000 })).toBeTruthy()
   }, 10_000)
 
@@ -166,5 +167,17 @@ describe('MyStack', () => {
     await new Promise((resolve) => setTimeout(resolve, 3500))
     expect(fetch).not.toHaveBeenCalled()
   }, 10_000)
+
+  it('downloads the review as a dated text file', async () => {
+    const created: Blob[] = []
+    vi.stubGlobal('URL', { ...URL, createObjectURL: (blob: Blob) => (created.push(blob), 'blob:review'), revokeObjectURL: () => {} })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.download).toBe('stack-review-2026-11-04.txt')
+    })
+    downloadReview('Your stack\nTwo tools.', new Date('2026-11-04T12:00:00Z'))
+    expect(click).toHaveBeenCalledOnce()
+    expect(await created[0].text()).toBe('Stack review from the Network Automation Product Catalog, 2026-11-04\n\nYour stack\nTwo tools.\n')
+    click.mockRestore()
+  })
 })
 

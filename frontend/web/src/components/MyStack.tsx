@@ -6,8 +6,8 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { submitStack, type Catalog, type SubmissionResult } from '../api'
 import { blockStyle, byFrameworkOrder } from '../graph/blockStyle'
-import { useStackReview } from '../stackReview'
-import { CheckIcon, CloseIcon } from './icons'
+import { downloadReview, useStackReview } from '../stackReview'
+import { CheckIcon, CloseIcon, WaitingDots } from './icons'
 
 interface Props {
   catalog: Catalog
@@ -84,7 +84,10 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
         <span className="review-pill review-pill-pending">
           <span className="review-pill-main" role="status">
             <span className="spinner" aria-hidden="true" />
-            Claude is reviewing your stack…
+            <span>
+              OpsMill&rsquo;s AI skill is reviewing your stack
+              <WaitingDots />
+            </span>
           </span>
           <button type="button" className="review-pill-clear" aria-label="Stop waiting for my stack review" title="Stop waiting" onClick={dismiss}>
             <CloseIcon />
@@ -130,7 +133,7 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                 </p>
                 {result.analysisId && (
                   <p className="stack-note">
-                    Claude is reviewing your stack. You can close this window: a message appears when the review is ready, usually within a
+                    An AI skill developed by OpsMill&rsquo;s Solution Architects is reviewing your stack. You can close this window: a message appears when the review is ready, usually within a
                     minute.
                   </p>
                 )}
@@ -195,7 +198,14 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                   </p>
                 )}
                 <button type="submit" className="primary-button" disabled={sending || !tools.length}>
-                  {sending ? 'Sending…' : 'Submit'}
+                  {sending ? (
+                    <>
+                      Sending
+                      <WaitingDots />
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
                 </button>
               </form>
             )}
@@ -230,9 +240,14 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
             <h2 id="review-title">Review of your stack</h2>
             <p className="stack-analysis-text">{review.text}</p>
             <div className="review-actions">
-              <button type="button" className="button" onClick={() => setReviewOpen(false)}>
-                Close
-              </button>
+              <span className="review-actions-main">
+                <button type="button" className="button" onClick={() => setReviewOpen(false)}>
+                  Close
+                </button>
+                <button type="button" className="button" onClick={() => downloadReview(review.text ?? '')}>
+                  Download
+                </button>
+              </span>
               <button
                 type="button"
                 className="link-button"

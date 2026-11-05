@@ -100,3 +100,17 @@ export function useStackReview() {
 
   return { review, start, markSeen, dismiss }
 }
+
+// Saves the review as a text file, with a first line that says where it comes from.
+export function downloadReview(text: string, today = new Date()) {
+  const date = today.toISOString().slice(0, 10)
+  const body = `Stack review from the Network Automation Product Catalog, ${date}\n\n${text}\n`
+  const url = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `stack-review-${date}.txt`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}

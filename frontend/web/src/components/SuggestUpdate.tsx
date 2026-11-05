@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { submitSuggestion, type Product, type SubmissionResult, type SuggestionTopic } from '../api'
 import { byFrameworkOrder } from '../graph/blockStyle'
+import { useEscape } from '../useEscape'
 import { WaitingDots } from './icons'
 
 const TOPICS: { value: SuggestionTopic; label: string }[] = [
@@ -30,6 +31,7 @@ export function SuggestUpdate({ product, blocks, onClose }: Props) {
   const [form, setForm] = useState({ correction: '', source_url: '', name: '', email: '' })
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<SubmissionResult | null>(null)
+  useEscape(onClose)
 
   // The product's own blocks first, then the others.
   const covered = product.claims.map((claim) => claim.block)

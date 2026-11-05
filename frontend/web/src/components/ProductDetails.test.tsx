@@ -69,7 +69,8 @@ describe('ProductDetails', () => {
     expect(items).toHaveLength(1)
     expect(items[0]).toContain('Uses a vendor-neutral model')
     expect(items[0]).toContain('Partly met')
-    expect(items[0]).toContain('example.org')
+    // The explanation and sources are not in the list; they open from the row.
+    expect(items[0]).not.toContain('Only through a plugin.')
     // Framework-wide requirements are not shortfalls: they do not count toward full coverage.
     expect(screen.queryByText('Uses version control')).toBeNull()
     expect(screen.queryByText('Writes to the network')).toBeNull()
@@ -107,6 +108,22 @@ describe('ProductDetails', () => {
     render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: 'Suggest an update' }))
     expect(screen.getByRole('dialog', { name: 'Suggest an update' })).toBeTruthy()
+  })
+
+  it('opens the explanation of a requirement, sources and framework link from its row, and closes it with Escape', async () => {
+    render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: /Uses a vendor-neutral model/ }))
+    const dialog = screen.getByRole('dialog', { name: 'Uses a vendor-neutral model' })
+    expect(within(dialog).getByText('Only through a plugin.')).toBeTruthy()
+    expect(within(dialog).getByRole('link', { name: 'example.org' }).getAttribute('href')).toBe('https://example.org/plugin')
+    expect(within(dialog).getByRole('link', { name: /Requirement in the framework/ })).toBeTruthy()
+    const onPanelEscape = vi.fn()
+    window.addEventListener('keydown', onPanelEscape)
+    await userEvent.keyboard('{Escape}')
+    window.removeEventListener('keydown', onPanelEscape)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    // Escape closes only the window, not the panel behind it.
+    expect(onPanelEscape).not.toHaveBeenCalled()
   })
 })
 

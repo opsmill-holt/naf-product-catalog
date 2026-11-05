@@ -594,10 +594,73 @@ button:disabled {
   border: 1px solid var(--border);
 }
 
+.requirement {
+  padding: 0;
+}
+
+/* Each requirement is one clickable line; its explanation opens in a window. */
 .requirement-head {
+  width: 100%;
   display: flex;
   align-items: baseline;
   gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.requirement-head:hover {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.requirement-more {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.requirement-detail h2 {
+  margin: 0.25rem 2.5rem 1rem 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.requirement-detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.requirement-detail-block {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.requirement-detail-section {
+  margin-bottom: 1rem;
+}
+
+.requirement-detail-section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.requirement-detail-section p {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .level {

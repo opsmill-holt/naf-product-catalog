@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useEscape } from '../useEscape'
 import type { Claim, Requirement, Source, Verdict, VerdictValue } from '../api'
 
 export const VERDICT_LABELS: Record<VerdictValue, string> = {
@@ -38,26 +40,66 @@ function Sources({ sources }: { sources: Source[] }) {
   )
 }
 
-function RequirementRow({ row }: { row: Row }) {
+// The full explanation of one verdict, opened from its row. Rendered on the page body: the product
+// panel's blur would otherwise keep the overlay inside the panel.
+function RequirementDetail({ row, block, onClose }: { row: Row; block: string; onClose: () => void }) {
+  const value = row.verdict?.verdict ?? 'not_shown'
+  useEscape(onClose)
+  return createPortal(
+    <div className="stack-overlay" onClick={onClose}>
+      <div
+        className="stack-dialog requirement-detail"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="requirement-detail-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button type="button" className="details-close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+        <p className="requirement-detail-badges">
+          <span className={`level level-${row.requirement.level}`}>{LEVEL_LABELS[row.requirement.level]}</span>
+          <span className={`verdict verdict-${value}`} title={VERDICT_TITLES[value]}>
+            {VERDICT_LABELS[value]}
+          </span>
+          <span className="requirement-detail-block">{row.requirement.block ?? 'Every building block'}</span>
+        </p>
+        <h2 id="requirement-detail-title">{row.requirement.summary}</h2>
+        <section className="requirement-detail-section">
+          <h3>The framework requires</h3>
+          <p>{row.requirement.statement}</p>
+        </section>
+        <section className="requirement-detail-section">
+          <h3>For this product ({block})</h3>
+          <p>{row.verdict?.note ?? 'No source shows whether the product meets this requirement.'}</p>
+          <Sources sources={row.verdict?.sources ?? []} />
+        </section>
+        <a className="requirement-ref" href={row.requirement.reference_url} target="_blank" rel="noopener noreferrer">
+          Requirement in the framework ↗
+        </a>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+// One requirement as a single line; the explanation and sources open in RequirementDetail.
+function RequirementRow({ row, block }: { row: Row; block: string }) {
+  const [open, setOpen] = useState(false)
   const value = row.verdict?.verdict ?? 'not_shown'
   return (
     <li className={`requirement requirement-${value}`}>
-      <div className="requirement-head">
+      <button type="button" className="requirement-head" onClick={() => setOpen(true)} aria-haspopup="dialog">
         <span className={`level level-${row.requirement.level}`}>{LEVEL_LABELS[row.requirement.level]}</span>
-        <span className="requirement-summary" title={row.requirement.statement}>
-          {row.requirement.summary}
-        </span>
+        <span className="requirement-summary">{row.requirement.summary}</span>
         <span className={`verdict verdict-${value}`} title={VERDICT_TITLES[value]}>
           {VERDICT_LABELS[value]}
         </span>
-      </div>
-      {row.verdict?.note && <p className="requirement-note">{row.verdict.note}</p>}
-      <div className="requirement-links">
-        <Sources sources={row.verdict?.sources ?? []} />
-        <a className="requirement-ref" href={row.requirement.reference_url} target="_blank" rel="noopener noreferrer">
-          Framework ↗
-        </a>
-      </div>
+        <span className="requirement-more" aria-hidden="true">
+          ›
+        </span>
+      </button>
+      {open && <RequirementDetail row={row} block={block} onClose={() => setOpen(false)} />}
     </li>
   )
 }
@@ -96,7 +138,7 @@ export function Requirements({ claim, requirements }: { claim: Claim; requiremen
       {shortfalls.length > 0 && (
         <ul className="requirement-list" aria-label={`Requirements ${claim.block} falls short on`}>
           {shortfalls.map((row) => (
-            <RequirementRow key={row.requirement.identifier} row={row} />
+            <RequirementRow key={row.requirement.identifier} row={row} block={claim.block} />
           ))}
         </ul>
       )}
@@ -110,7 +152,7 @@ export function Requirements({ claim, requirements }: { claim: Claim; requiremen
         <>
           <ul className="requirement-list">
             {[...met, ...optional].map((row) => (
-              <RequirementRow key={row.requirement.identifier} row={row} />
+              <RequirementRow key={row.requirement.identifier} row={row} block={claim.block} />
             ))}
           </ul>
           {frameworkWide.length > 0 && (
@@ -118,7 +160,7 @@ export function Requirements({ claim, requirements }: { claim: Claim; requiremen
               <p className="requirements-status">For every building block. Shown, but not counted toward full coverage:</p>
               <ul className="requirement-list" aria-label="Framework-wide requirements">
                 {frameworkWide.map((row) => (
-                  <RequirementRow key={row.requirement.identifier} row={row} />
+                  <RequirementRow key={row.requirement.identifier} row={row} block={claim.block} />
                 ))}
               </ul>
             </>

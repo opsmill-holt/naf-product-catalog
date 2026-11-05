@@ -8,6 +8,7 @@ Base path `/api`. JSON only. No authentication, so the service exposes nothing e
 | POST | `/api/submissions` | Submit a product | `201`, `409`, `422`, `502`, `503` |
 | POST | `/api/stacks` | Submit the products one visitor uses (their automation stack) | `201`, `422`, `429`, `502` |
 | GET | `/api/analyses/{id}` | The stack-review skill's answer for a submitted stack | `200`, `404` |
+| POST | `/api/suggestions` | Suggest that a product's facts are wrong or out of date | `201`, `422`, `429`, `502` |
 | GET | `/api/health` | Liveness for deployment | `200` |
 
 Configuration (environment variables, never committed):
@@ -58,4 +59,26 @@ The page polls with the random `analysis_id` from the submission. Responses:
 
 A failed or slow review (over 90 seconds or 0.50 USD) is reported as `failed`; the stack is saved
 either way.
+
+## POST /api/suggestions
+
+Request body. `product` is a full name as `/api/catalog` returns it. `topic` is one of
+`description`, `homepage`, `publisher`, `license_model`, `status`, `coverage` or `other`; `block`
+names the building block and is required when `topic` is `coverage`. `correction` (at most 2000
+characters) says what it should be. `source_url`, `name` and `email` are optional; an empty string
+is the same as leaving the field out.
+
+```json
+{ "product": "Red Hat Ansible", "topic": "license_model", "correction": "...", "source_url": "https://...", "name": "", "email": "" }
+```
+
+The service creates a branch named `submission-<date>-<random>` with one `CatalogUpdateSuggestion`
+record linked to the product (and to the block for coverage), and opens a proposed change named
+"Update suggestion: <product> (<topic>)". Merging it changes no catalog fact: a maintainer checks the
+suggestion and edits the product on a branch of its own. Responses:
+
+- `201` `{"reference": "<branch name>"}`;
+- `422` when the product or block is not in the catalog on `main`, or the body is not valid;
+- `429` over the submission limit, shared with `/api/submissions` and `/api/stacks`;
+- `502` when Infrahub could not store it; nothing is left behind.
 

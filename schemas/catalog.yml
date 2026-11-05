@@ -503,3 +503,81 @@ nodes:
         optional: true
         identifier: automation_stack__blocks_without_tool
         description: Blocks the visitor says they have no tool for. For other uncovered blocks, the visitor did not say.
+
+  - name: UpdateSuggestion
+    namespace: Catalog
+    description: A visitor's suggestion that a product's facts are wrong or out of date. Maintainers apply it.
+    label: Update Suggestion
+    icon: mdi:message-alert-outline
+    include_in_menu: true
+    human_friendly_id:
+      - reference__value
+    order_by:
+      - submitted_at__value
+    display_label: reference__value
+    generate_profile: false
+    attributes:
+      - name: reference
+        kind: Text
+        unique: true
+        description: The submission branch the suggestion was sent on.
+        order_weight: 1000
+      - name: submitted_at
+        kind: DateTime
+        order_weight: 1100
+      - name: topic
+        kind: Dropdown
+        choices:
+          - name: description
+            label: Description
+          - name: homepage
+            label: Home page
+          - name: publisher
+            label: Publisher
+          - name: license_model
+            label: License model
+          - name: status
+            label: Status
+          - name: coverage
+            label: Coverage of a building block
+          - name: other
+            label: Something else
+        description: Which part of the product the suggestion is about.
+        order_weight: 1200
+      - name: correction
+        kind: TextArea
+        description: What the visitor says it should be, as they typed it.
+        order_weight: 1300
+      - name: source_url
+        kind: URL
+        label: Source
+        optional: true
+        description: A link the visitor gave that shows the correct information; not checked.
+        order_weight: 1400
+      - name: submitter_name
+        kind: Text
+        label: Name
+        optional: true
+        description: As the visitor typed it; not verified.
+        order_weight: 1500
+      - name: submitter_email
+        kind: Email
+        label: Email
+        optional: true
+        description: As the visitor typed it; not verified.
+        order_weight: 1600
+    relationships:
+      - name: product
+        peer: CatalogProduct
+        kind: Attribute
+        cardinality: one
+        optional: false
+        identifier: update_suggestion__product
+        description: The product the suggestion is about.
+      - name: building_block
+        peer: CatalogBuildingBlock
+        kind: Attribute
+        cardinality: one
+        optional: true
+        identifier: update_suggestion__building_block
+        description: For a suggestion about coverage, the building block it is about.

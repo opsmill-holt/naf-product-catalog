@@ -1,4 +1,5 @@
-"""The catalog web service: read the catalog, and submit products and automation stacks for review."""
+"""The catalog web service: read the catalog, and submit products, automation stacks and update suggestions
+for review."""
 
 import logging
 
@@ -12,6 +13,7 @@ from catalog_web.catalog import CatalogCache
 from catalog_web.infrahub import get_client
 from catalog_web.limits import SubmissionLimit
 from catalog_web.stacks import Stack, submit_stack
+from catalog_web.suggestions import Suggestion, submit_suggestion
 from catalog_web.submissions import Submission, SubmissionError, submit
 
 logging.basicConfig(level=logging.INFO)
@@ -93,3 +95,22 @@ async def stack_analysis(analysis_id: str) -> dict[str, str | None]:
     if item is None:
         raise HTTPException(status_code=404, detail="No review with this ID. Reviews are kept for an hour.")
     return {"status": item.status, "text": item.text}
+
+
+@app.post("/api/suggestions", status_code=201)
+async def suggestions(suggestion: Suggestion, request: Request) -> dict[str, str]:
+    address = request.client.host if request.client else "unknown"
+    if not limit.allow(address):
+        logger.warning("suggestion refused: over the limit for %s or in total", address)
+        return JSONResponse(status_code=429, content={"detail": TOO_MANY})
+    try:
+        reference = await submit_suggestion(get_client(), suggestion)
+    except SubmissionError as error:
+        return JSONResponse(status_code=error.status_code, content={"detail": error.message})
+    except (httpx.HTTPError, InfrahubError):
+        logger.exception("saving a suggestion failed")
+        return JSONResponse(
+            status_code=502,
+            content={"detail": "Your suggestion was not saved. Nothing was created. Please try again."},
+        )
+    return {"reference": reference}

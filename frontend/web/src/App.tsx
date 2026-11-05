@@ -268,6 +268,7 @@ export default function App() {
                 inStack={stack.includes(selected.full_name)}
                 onToggleStack={() => myTools.toggle(selected.full_name)}
                 onClose={() => setFocus(null)}
+                blocks={shown.blocks.map((block) => block.name)}
               />
             )}
             {view === 'framework' && selectedBlock && (

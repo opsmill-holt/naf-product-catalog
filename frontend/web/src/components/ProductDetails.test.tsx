@@ -102,4 +102,11 @@ describe('ProductDetails', () => {
     rerender(<ProductDetails product={product} requirements={requirements} inStack onToggleStack={onToggleStack} onClose={() => {}} />)
     expect(screen.getByRole('button', { name: /In my stack/ }).getAttribute('aria-pressed')).toBe('true')
   })
+
+  it('opens the suggestion dialog from the panel', async () => {
+    render(<ProductDetails product={product} requirements={requirements} inStack={false} onToggleStack={() => {}} onClose={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Suggest an update' }))
+    expect(screen.getByRole('dialog', { name: 'Suggest an update' })).toBeTruthy()
+  })
 })
+

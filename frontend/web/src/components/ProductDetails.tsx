@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { LICENSE_LABELS, type Product, type Requirement, type Source } from '../api'
 import { blockStyle } from '../graph/blockStyle'
 import { Logo } from '../graph/Logo'
 import { CheckIcon, PlusIcon } from './icons'
+import { SuggestUpdate } from './SuggestUpdate'
 import { Requirements } from './Requirements'
 
 function hostOf(url: string): string {
@@ -32,9 +33,11 @@ interface Props {
   inStack: boolean
   onToggleStack: () => void
   onClose: () => void
+  blocks?: string[] // every building block, for coverage suggestions
 }
 
-export function ProductDetails({ product, requirements, inStack, onToggleStack, onClose }: Props) {
+export function ProductDetails({ product, requirements, inStack, onToggleStack, onClose, blocks = [] }: Props) {
+  const [suggesting, setSuggesting] = useState(false)
   const claims = [...product.claims].sort((a, b) =>
     a.extent === b.extent ? a.block.localeCompare(b.block) : a.extent === 'full' ? -1 : 1,
   )
@@ -74,6 +77,15 @@ export function ProductDetails({ product, requirements, inStack, onToggleStack, 
         <span>{inStack ? 'In my stack' : 'Add to my stack'}</span>
         {inStack && <span className="stack-toggle-hint">Remove</span>}
       </button>
+      <p className="suggest-link">
+        Something wrong or out of date?{' '}
+        <button type="button" className="link-button" onClick={() => setSuggesting(true)}>
+          Suggest an update
+        </button>
+      </p>
+      {suggesting && (
+        <SuggestUpdate product={product} blocks={blocks.length ? blocks : product.claims.map((claim) => claim.block)} onClose={() => setSuggesting(false)} />
+      )}
 
       <section className="details-section">
         <h3>What it does</h3>

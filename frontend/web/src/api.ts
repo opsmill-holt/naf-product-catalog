@@ -121,6 +121,23 @@ export function submitStack(body: StackSubmission): Promise<SubmissionResult> {
   return post('/api/stacks', body)
 }
 
+// A visitor's suggestion that a product's facts are wrong or out of date.
+export type SuggestionTopic = 'description' | 'homepage' | 'publisher' | 'license_model' | 'status' | 'coverage' | 'other'
+
+export interface SuggestionSubmission {
+  product: string // full name
+  topic: SuggestionTopic
+  block?: string // for coverage
+  correction: string
+  source_url?: string
+  name?: string
+  email?: string
+}
+
+export function submitSuggestion(body: SuggestionSubmission): Promise<SubmissionResult> {
+  return post('/api/suggestions', body)
+}
+
 async function post(path: string, body: unknown): Promise<SubmissionResult> {
   const response = await fetch(path, {
     method: 'POST',

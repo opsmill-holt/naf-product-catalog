@@ -1,13 +1,13 @@
-// The dialog where a visitor says that a product's facts are wrong or out of date. The service stores
-// it as an update suggestion for the maintainers (frontend/api/catalog_web/suggestions.py); the
-// catalog itself does not change.
+// The dialog where a visitor says that a product's facts are wrong or out of date. One suggestion can
+// list several changes, each with its own source. The service stores them as update suggestions for
+// the maintainers (frontend/api/catalog_web/suggestions.py); the catalog itself does not change.
 
 import { useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { submitSuggestion, type Product, type SubmissionResult, type SuggestionTopic } from '../api'
 import { byFrameworkOrder } from '../graph/blockStyle'
 import { useEscape } from '../useEscape'
-import { WaitingDots } from './icons'
+import { CloseIcon, PlusIcon, WaitingDots } from './icons'
 
 const TOPICS: { value: SuggestionTopic; label: string }[] = [
   { value: 'description', label: 'Description' },
@@ -19,6 +19,19 @@ const TOPICS: { value: SuggestionTopic; label: string }[] = [
   { value: 'other', label: 'Something else' },
 ]
 
+const MAX_CHANGES = 10
+
+interface Change {
+  key: number
+  topic: SuggestionTopic
+  block: string
+  correction: string
+  source_url: string
+}
+
+let nextKey = 0
+const newChange = (): Change => ({ key: nextKey++, topic: 'description', block: '', correction: '', source_url: '' })
+
 interface Props {
   product: Product
   blocks: string[]
@@ -26,9 +39,8 @@ interface Props {
 }
 
 export function SuggestUpdate({ product, blocks, onClose }: Props) {
-  const [topic, setTopic] = useState<SuggestionTopic>('description')
-  const [block, setBlock] = useState('')
-  const [form, setForm] = useState({ correction: '', source_url: '', name: '', email: '' })
+  const [changes, setChanges] = useState<Change[]>(() => [newChange()])
+  const [contact, setContact] = useState({ name: '', email: '' })
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<SubmissionResult | null>(null)
   useEscape(onClose)
@@ -37,30 +49,26 @@ export function SuggestUpdate({ product, blocks, onClose }: Props) {
   const covered = product.claims.map((claim) => claim.block)
   const blockOptions = [...blocks].sort((a, b) => Number(covered.includes(b)) - Number(covered.includes(a)) || byFrameworkOrder(a, b))
 
+  const update = (key: number, patch: Partial<Change>) =>
+    setChanges((current) => current.map((change) => (change.key === key ? { ...change, ...patch } : change)))
+  const complete = changes.every((change) => change.correction.trim() && (change.topic !== 'coverage' || change.block))
+
   const send = async (event: FormEvent) => {
     event.preventDefault()
     setSending(true)
     const outcome = await submitSuggestion({
       product: product.full_name,
-      topic,
-      ...(topic === 'coverage' ? { block } : {}),
-      ...form,
+      changes: changes.map(({ topic, block, correction, source_url }) => ({
+        topic,
+        ...(topic === 'coverage' ? { block } : {}),
+        correction,
+        source_url,
+      })),
+      ...contact,
     }).catch((): SubmissionResult => ({ ok: false, message: 'Your suggestion was not sent. Please try again.' }))
     setSending(false)
     setResult(outcome)
   }
-
-  const field = (key: 'source_url' | 'name' | 'email', label: string, type: string) => (
-    <label className="stack-field">
-      <span>{label}</span>
-      <input
-        type={type}
-        value={form[key]}
-        maxLength={key === 'source_url' ? 500 : key === 'email' ? 254 : 100}
-        onChange={(event) => setForm({ ...form, [key]: event.target.value })}
-      />
-    </label>
-  )
 
   // Rendered on the page body: the product panel's blur would otherwise keep the overlay inside it.
   return createPortal(
@@ -82,55 +90,94 @@ export function SuggestUpdate({ product, blocks, onClose }: Props) {
           </>
         ) : (
           <form onSubmit={send}>
-            <label className="stack-field">
-              <span>What needs updating?</span>
-              <select value={topic} onChange={(event) => setTopic(event.target.value as SuggestionTopic)}>
-                {TOPICS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {topic === 'coverage' && (
-              <label className="stack-field">
-                <span>Which building block?</span>
-                <select value={block} required onChange={(event) => setBlock(event.target.value)}>
-                  <option value="">Choose a block</option>
-                  {blockOptions.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                      {covered.includes(name) ? '' : ' (not covered now)'}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {changes.map((change, index) => (
+              <fieldset key={change.key} className="suggest-change" aria-label={`Change ${index + 1}`}>
+                {changes.length > 1 && (
+                  <div className="suggest-change-head">
+                    <span>Change {index + 1}</span>
+                    <button
+                      type="button"
+                      className="suggest-change-remove"
+                      aria-label={`Remove change ${index + 1}`}
+                      onClick={() => setChanges((current) => current.filter((item) => item.key !== change.key))}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
+                )}
+                <label className="stack-field">
+                  <span>What needs updating?</span>
+                  <select value={change.topic} onChange={(event) => update(change.key, { topic: event.target.value as SuggestionTopic })}>
+                    {TOPICS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {change.topic === 'coverage' && (
+                  <label className="stack-field">
+                    <span>Which building block?</span>
+                    <select value={change.block} required onChange={(event) => update(change.key, { block: event.target.value })}>
+                      <option value="">Choose a block</option>
+                      {blockOptions.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                          {covered.includes(name) ? '' : ' (not covered now)'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label className="stack-field">
+                  <span>What should it say instead?</span>
+                  <textarea
+                    required
+                    rows={3}
+                    maxLength={2000}
+                    value={change.correction}
+                    onChange={(event) => update(change.key, { correction: event.target.value })}
+                  />
+                </label>
+                <label className="stack-field">
+                  <span>Link to a source that shows it (optional, but it helps us check)</span>
+                  <input
+                    type="url"
+                    maxLength={500}
+                    value={change.source_url}
+                    onChange={(event) => update(change.key, { source_url: event.target.value })}
+                  />
+                </label>
+              </fieldset>
+            ))}
+            {changes.length < MAX_CHANGES && (
+              <button type="button" className="suggest-add" onClick={() => setChanges((current) => [...current, newChange()])}>
+                <PlusIcon />
+                Add another change
+              </button>
             )}
             <label className="stack-field">
-              <span>What should it say instead?</span>
-              <textarea
-                required
-                rows={4}
-                maxLength={2000}
-                value={form.correction}
-                onChange={(event) => setForm({ ...form, correction: event.target.value })}
-              />
+              <span>Name (optional)</span>
+              <input type="text" maxLength={100} value={contact.name} onChange={(event) => setContact({ ...contact, name: event.target.value })} />
             </label>
-            {field('source_url', 'Link to a source that shows it (optional, but it helps us check)', 'url')}
-            {field('name', 'Name (optional)', 'text')}
-            {field('email', 'Email (optional, if we may ask you about it)', 'email')}
+            <label className="stack-field">
+              <span>Email (optional, if we may ask you about it)</span>
+              <input type="email" maxLength={254} value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} />
+            </label>
             <p className="stack-note">Only the catalog maintainers can view your suggestion and these details.</p>
             {result && !result.ok && (
               <p className="notice notice-error" role="alert">
                 {result.message}
               </p>
             )}
-            <button type="submit" className="primary-button" disabled={sending || !form.correction.trim() || (topic === 'coverage' && !block)}>
+            <button type="submit" className="primary-button" disabled={sending || !complete}>
               {sending ? (
                 <>
                   Sending
                   <WaitingDots />
                 </>
+              ) : changes.length > 1 ? (
+                `Send ${changes.length} changes`
               ) : (
                 'Send suggestion'
               )}

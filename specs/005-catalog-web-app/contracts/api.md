@@ -62,23 +62,25 @@ either way.
 
 ## POST /api/suggestions
 
-Request body. `product` is a full name as `/api/catalog` returns it. `topic` is one of
-`description`, `homepage`, `publisher`, `license_model`, `status`, `coverage` or `other`; `block`
-names the building block and is required when `topic` is `coverage`. `correction` (at most 2000
-characters) says what it should be. `source_url`, `name` and `email` are optional; an empty string
-is the same as leaving the field out.
+Request body. `product` is a full name as `/api/catalog` returns it. `changes` lists 1 to 10 things
+that should change. In each, `topic` is one of `description`, `homepage`, `publisher`,
+`license_model`, `status`, `coverage` or `other`; `block` names the building block and is required
+when `topic` is `coverage`; `correction` (at most 2000 characters) says what it should be;
+`source_url` is optional. `name` and `email` are optional and apply to the whole suggestion; an
+empty string is the same as leaving a field out.
 
 ```json
-{ "product": "Red Hat Ansible", "topic": "license_model", "correction": "...", "source_url": "https://...", "name": "", "email": "" }
+{ "product": "Red Hat Ansible", "changes": [{ "topic": "license_model", "correction": "...", "source_url": "https://..." }, { "topic": "coverage", "block": "Executor", "correction": "..." }], "name": "", "email": "" }
 ```
 
 The service creates a branch named `submission-<date>-<random>` with one `CatalogUpdateSuggestion`
-record linked to the product (and to the block for coverage), and opens a proposed change named
-"Update suggestion: <product> (<topic>)". Merging it changes no catalog fact: a maintainer checks the
-suggestion and edits the product on a branch of its own. Responses:
+record per change, linked to the product (and to the block for coverage). With one change, the
+record's `reference` is the branch name; with several, it is the branch name followed by `-1`, `-2`
+and so on. One proposed change, named "Update suggestion: <product> (<topics>)", covers them all.
+Merging it changes no catalog fact: a maintainer checks each suggestion and edits the product on a
+branch of its own. Responses:
 
 - `201` `{"reference": "<branch name>"}`;
-- `422` when the product or block is not in the catalog on `main`, or the body is not valid;
+- `422` when the product or a block is not in the catalog on `main`, or the body is not valid;
 - `429` over the submission limit, shared with `/api/submissions` and `/api/stacks`;
 - `502` when Infrahub could not store it; nothing is left behind.
-

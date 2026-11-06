@@ -520,7 +520,7 @@ nodes:
       - name: reference
         kind: Text
         unique: true
-        description: The submission branch the suggestion was sent on.
+        description: The submission branch, followed by the change number when one suggestion lists several.
         order_weight: 1000
       - name: submitted_at
         kind: DateTime

@@ -124,12 +124,16 @@ export function submitStack(body: StackSubmission): Promise<SubmissionResult> {
 // A visitor's suggestion that a product's facts are wrong or out of date.
 export type SuggestionTopic = 'description' | 'homepage' | 'publisher' | 'license_model' | 'status' | 'coverage' | 'other'
 
-export interface SuggestionSubmission {
-  product: string // full name
+export interface SuggestionChange {
   topic: SuggestionTopic
   block?: string // for coverage
   correction: string
   source_url?: string
+}
+
+export interface SuggestionSubmission {
+  product: string // full name
+  changes: SuggestionChange[] // at least 1, at most 10
   name?: string
   email?: string
 }

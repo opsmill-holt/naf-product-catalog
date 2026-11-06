@@ -2068,3 +2068,60 @@ button.review-pill-main:hover {
   resize: vertical;
   min-height: 5rem;
 }
+
+.suggest-change {
+  margin: 0 0 0.9rem;
+  padding: 0.75rem 0.9rem 0.1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.suggest-change-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.suggest-change-remove {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+.suggest-change-remove:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.suggest-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1.1rem;
+  padding: 0.4rem 0.8rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.suggest-add:hover {
+  border-color: var(--accent);
+}

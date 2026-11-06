@@ -37,6 +37,7 @@ services:
       # Empty switches the stack review off.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       STACK_ANALYSIS_MODEL: ${STACK_ANALYSIS_MODEL:-claude-sonnet-5}
+      STACK_ANALYSIS_EFFORT: ${STACK_ANALYSIS_EFFORT:-medium}
     depends_on:
       infrahub-server:
         condition: service_healthy

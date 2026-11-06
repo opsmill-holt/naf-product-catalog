@@ -8,7 +8,7 @@ import { fetchAnalysis } from './api'
 
 const KEY = 'catalog.stackReview'
 const POLL_MS = 3000
-const GIVE_UP_MS = 120_000
+const GIVE_UP_MS = 180_000 // the service stops a review after 150 seconds
 
 export interface StackReview {
   id: string

@@ -57,7 +57,7 @@ The page polls with the random `analysis_id` from the submission. Responses:
 - `200` `{"status": "pending" | "done" | "failed", "text": "<answer>" | null}`;
 - `404` for an unknown ID; answers are kept in the service's memory for an hour.
 
-A failed or slow review (over 90 seconds or 0.50 USD) is reported as `failed`; the stack is saved
+A failed or slow review (over 150 seconds or 0.50 USD) is reported as `failed`; the stack is saved
 either way.
 
 ## POST /api/suggestions

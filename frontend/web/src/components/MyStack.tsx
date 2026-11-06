@@ -133,8 +133,8 @@ export function MyStack({ catalog, tools, onRemove, onClear }: Props) {
                 </p>
                 {result.analysisId && (
                   <p className="stack-note">
-                    An AI skill developed by OpsMill&rsquo;s Solution Architects is reviewing your stack. You can close this window: a message appears when the review is ready, usually within a
-                    minute.
+                    An AI skill developed by OpsMill&rsquo;s Solution Architects is reviewing your stack. You can close this window: a message appears when the review is ready, usually within a minute or
+                    two.
                   </p>
                 )}
                 <button type="button" className="button" onClick={close}>

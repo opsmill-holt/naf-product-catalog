@@ -25,7 +25,10 @@ logger = logging.getLogger(__name__)
 SKILL = "stack-review"
 SKILL_HOME = Path(__file__).resolve().parent.parent / "skill_home"
 MODEL = os.environ.get("STACK_ANALYSIS_MODEL", "claude-sonnet-5")
-TIMEOUT_SECONDS = 90
+# How much the model thinks. Measured on a 5-product stack (2026-11-06): high took 87 s, medium 55 s
+# with an answer that kept to the skill's rules, low 31 s with one that did not.
+EFFORT = os.environ.get("STACK_ANALYSIS_EFFORT", "medium")
+TIMEOUT_SECONDS = 150
 MAX_BUDGET_USD = 0.5
 KEEP_SECONDS = 3600  # how long the page can collect an answer
 
@@ -103,6 +106,7 @@ async def run_skill(facts: dict[str, Any]) -> str:
             tools=["Skill"],  # no shell, file or web access
             permission_mode="dontAsk",
             model=MODEL,
+            effort=EFFORT,
             max_turns=4,
             max_budget_usd=MAX_BUDGET_USD,
             # The CLI keeps its session files under HOME; the service account has no home. The

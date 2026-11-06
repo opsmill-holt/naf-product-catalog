@@ -189,7 +189,10 @@ is set.
    sudo docker compose -f docker-compose.yml -f deploy/docker-compose.gcp.yml --env-file deploy/.env up -d catalog-api
    ```
 
-`STACK_ANALYSIS_MODEL` in `deploy/.env` changes the model (default `claude-sonnet-5`). To change the
+`STACK_ANALYSIS_MODEL` in `deploy/.env` changes the model (default `claude-sonnet-5`), and
+`STACK_ANALYSIS_EFFORT` how much it thinks (`low`, `medium` or `high`; default `medium`). A review is
+stopped after 150 seconds: on a 5-product stack, `high` took 87 seconds and `low` gave answers that
+did not keep to the skill's rules. To change the
 skill, edit `frontend/api/skill_home/.claude/skills/stack-review/SKILL.md`, push, and deploy as
 above. Remove the key to switch the review off.
 

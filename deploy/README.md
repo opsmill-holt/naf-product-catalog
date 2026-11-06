@@ -189,12 +189,21 @@ is set.
    sudo docker compose -f docker-compose.yml -f deploy/docker-compose.gcp.yml --env-file deploy/.env up -d catalog-api
    ```
 
-`STACK_ANALYSIS_MODEL` in `deploy/.env` changes the model (default `claude-sonnet-5`), and
-`STACK_ANALYSIS_EFFORT` how much it thinks (`low`, `medium` or `high`; default `medium`). A review is
-stopped after 150 seconds: on a 5-product stack, `high` took 87 seconds and `low` gave answers that
-did not keep to the skill's rules. To change the
-skill, edit `frontend/api/skill_home/.claude/skills/stack-review/SKILL.md`, push, and deploy as
-above. Remove the key to switch the review off.
+Settings in `deploy/.env`:
+
+- `STACK_ANALYSIS_MODEL`: the model, default `claude-sonnet-5-5`.
+- `STACK_ANALYSIS_EFFORT`: how much it thinks, `low`, `medium` or `high`; default `high`.
+- `STACK_ANALYSIS_RUNNER`: `direct` (default) sends the skill's instructions in one request to the
+  Claude API; `sdk` runs them as a skill through the Claude Agent SDK.
+
+The service writes the review's "Coverage and gaps" section itself; the model writes the rest. A
+review is stopped after 150 seconds. Compared on four stacks (2026-11-06), the direct call with
+Sonnet 5.5 at high effort kept to the skill's rules for 0.02 to 0.035 USD and under 20 seconds a
+review, against about 0.11 USD and 60 seconds through the Agent SDK with Sonnet 5 at medium effort.
+At medium effort Sonnet 5.5 missed a workflow that high effort found; Haiku 5.5 cost about 0.003 USD
+but called workflows ready without evidence. To change the skill, edit
+`frontend/api/skill_home/.claude/skills/stack-review/SKILL.md`, push, and deploy as above.
+Remove the key to switch the review off.
 
 ## Changing the submission limits
 

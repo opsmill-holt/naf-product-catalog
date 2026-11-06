@@ -3,7 +3,7 @@ import asyncio
 from fastapi.testclient import TestClient
 
 from catalog_web import analysis
-from catalog_web.analysis import Analyses, build_input
+from catalog_web.analysis import Analyses, build_input, compose, coverage_section
 
 CATALOG = {
     "blocks": [{"name": "Collector"}, {"name": "Executor"}, {"name": "Intent"}],
@@ -11,10 +11,12 @@ CATALOG = {
         {"identifier": "C1", "level": "must", "summary": "Reads live data", "block": "Collector"},
         {"identifier": "C2", "level": "may", "summary": "Optional thing", "block": "Collector"},
         {"identifier": "E1", "level": "must", "summary": "Writes changes", "block": "Executor"},
+        {"identifier": "F1", "level": "should", "summary": "Uses version control", "block": None},
     ],
     "products": [
         {
             "full_name": "Example Tool",
+            "name": "Tool",
             "description": "Collects data.",
             "status": "active",
             "claims": [
@@ -23,11 +25,11 @@ CATALOG = {
                     "extent": "partial",
                     "assessed": True,
                     "note": "Only SNMP.",
-                    "verdicts": [{"requirement": "C1", "verdict": "partly_met"}],
+                    "verdicts": [{"requirement": "C1", "verdict": "partly_met"}, {"requirement": "F1", "verdict": "not_met"}],
                 }
             ],
         },
-        {"full_name": "Other Tool", "description": "", "status": "active", "claims": []},
+        {"full_name": "Other Tool", "name": "Other", "description": "", "status": "active", "claims": []},
     ],
 }
 
@@ -41,7 +43,7 @@ def test_input_has_only_the_chosen_products_and_the_status_of_every_block() -> N
             "extent": "partial",
             "note": "Only SNMP.",
             "requirements_met": [],
-            "requirements_not_met": ["Reads live data"],
+            "requirements_not_met": ["MUST: Reads live data"],
         }
     ]
     assert {block["name"]: block["status"] for block in facts["blocks"]} == {
@@ -144,3 +146,31 @@ def test_unknown_analysis_id_is_not_found() -> None:
 
 def test_skill_file_is_where_the_service_looks_for_it() -> None:
     assert (analysis.SKILL_HOME / ".claude" / "skills" / analysis.SKILL / "SKILL.md").is_file()
+
+
+def test_a_fully_covered_block_is_sent_without_its_requirements() -> None:
+    catalog = {**CATALOG, "products": [{**CATALOG["products"][0], "claims": [{**CATALOG["products"][0]["claims"][0], "extent": "full"}]}]}
+    facts = build_input(catalog, ["Example Tool"], [])
+    assert facts["blocks"][0]["requirements"] == []
+    assert facts["blocks"][1]["requirements"] == [{"level": "must", "summary": "Writes changes"}]
+
+
+def test_coverage_section_is_written_from_the_facts() -> None:
+    facts = build_input(CATALOG, ["Example Tool"], ["Executor"])
+    assert coverage_section(facts) == "\n".join(
+        [
+            "Coverage and gaps",
+            "- Partly covered: Collector (Tool). MUST requirement not fully met: Reads live data.",
+            "- No tool: Executor.",
+            "- Not stated: Intent.",
+        ]
+    )
+
+
+def test_coverage_section_goes_after_your_stack() -> None:
+    written = "Your stack\nTwo tools.\n\nWorkflows\nReady now:\n- none\n\nNext steps\n1. Add one."
+    assert compose(written, "Coverage and gaps\n- x") == (
+        "Your stack\nTwo tools.\n\nCoverage and gaps\n- x\n\nWorkflows\nReady now:\n- none\n\nNext steps\n1. Add one."
+    )
+    # Without a Workflows title, the section goes at the end rather than being lost.
+    assert compose("Something else", "Coverage and gaps") == "Something else\n\nCoverage and gaps"

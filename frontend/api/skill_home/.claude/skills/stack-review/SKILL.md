@@ -16,7 +16,8 @@ JSON with two keys:
   building blocks it covers, each with `extent` (`full`, `partial` or `not assessed`), a `note` that
   explains the coverage, `requirements_met` and `requirements_not_met`.
 - `blocks`: every building block, with `status` (`covered`; `no tool` when the visitor said they
-  have no tool for it; `not stated` when they said nothing) and its MUST and SHOULD `requirements`.
+  have no tool for it; `not stated` when they said nothing) and, unless a tool covers it fully, its
+  MUST and SHOULD `requirements`.
 
 The building blocks of the Network Automation Framework:
 
@@ -91,17 +92,13 @@ Event-driven remediation (closed loop)
 
 ## What to write
 
-Plain text with these four sections, in this order, each under its title on its own line:
+The service adds a "Coverage and gaps" section, written from the same facts, after "Your stack". Do
+not write that section. Write plain text with these three sections, in this order, each under its
+title on its own line:
 
 Your stack
 Two or three sentences: what the tools are and what they do together, in terms of the building
 blocks. Name every tool once.
-
-Coverage and gaps
-- The blocks covered fully, and by which tool.
-- The blocks covered only partly, with the most important requirement not met (from
-  `requirements_not_met` or the note), in a few words.
-- The blocks with no tool, and the blocks the visitor did not say anything about. Keep the two apart.
 
 Workflows
 Write it in exactly this shape:
@@ -113,8 +110,8 @@ Close:
 - <workflow>: missing <step>
 
 Ready now lists the workflows where every step has a tool shown to do it. Close lists the workflows
-where exactly one step has no tool shown to do it. Give at most three of each. If no workflow is
-ready, say so and give the closest ones. Next steps may only refer to workflows named in this section.
+where exactly one step has no tool shown to do it, never more. Give at most three of each. When a list
+is empty, write "- None" under its label. Next steps may only refer to workflows named in this section.
 
 Next steps
 Two or three short, numbered items, most useful first. Prefer the missing step that the most
@@ -131,4 +128,4 @@ name products that are not in the input.
 - No Markdown: no `#`, no `**`, no tables. Each section title on its own line, with its text on the
   next line and no blank line in between. One blank line between sections. Items start with "- " or
   "1. ".
-- 200 to 300 words, never more. If the review is too long, shorten the Coverage and gaps section first.
+- 150 to 250 words, never more.

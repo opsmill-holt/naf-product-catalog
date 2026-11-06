@@ -36,8 +36,9 @@ services:
       SUBMISSIONS_PER_HOUR: ${SUBMISSIONS_PER_HOUR:-50}
       # Empty switches the stack review off.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      STACK_ANALYSIS_MODEL: ${STACK_ANALYSIS_MODEL:-claude-sonnet-5}
-      STACK_ANALYSIS_EFFORT: ${STACK_ANALYSIS_EFFORT:-medium}
+      STACK_ANALYSIS_MODEL: ${STACK_ANALYSIS_MODEL:-claude-sonnet-5-5}
+      STACK_ANALYSIS_RUNNER: ${STACK_ANALYSIS_RUNNER:-direct}
+      STACK_ANALYSIS_EFFORT: ${STACK_ANALYSIS_EFFORT:-high}
     depends_on:
       infrahub-server:
         condition: service_healthy

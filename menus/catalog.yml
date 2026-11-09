@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://schema.infrahub.app/infrahub/menu/latest.json
+#
+# Sidebar menu for the catalog. It is not registered in .infrahub.yml, like the schemas and
+# object files: load it with `uv run infrahubctl menu load menus/`.
+#
+# Every node below has include_in_menu: false in schemas/catalog.yml, so that it is not listed
+# a second time in the menu Infrahub builds from the schema.
+---
+apiVersion: infrahub.app/v1
+kind: Menu
+spec:
+  data:
+    # --------- What the public catalog shows ---------
+    - namespace: Catalog
+      name: CatalogMenu
+      label: Catalog
+      icon: "mdi:book-open-variant"
+      order_weight: 1000
+      children:
+        data:
+          - namespace: Catalog
+            name: Products
+            label: Products
+            kind: CatalogProduct
+            icon: "mdi:package-variant-closed"
+            order_weight: 1000
+          - namespace: Catalog
+            name: Publishers
+            label: Publishers
+            kind: CatalogPublisher
+            icon: "mdi:domain"
+            order_weight: 2000
+          - namespace: Catalog
+            name: BuildingBlocks
+            label: Building Blocks
+            kind: CatalogBuildingBlock
+            icon: "mdi:puzzle-outline"
+            order_weight: 3000
+          - namespace: Catalog
+            name: Requirements
+            label: Requirements
+            kind: CatalogRequirement
+            icon: "mdi:format-list-checks"
+            order_weight: 4000
+
+    # --------- The sources and the facts they support ---------
+    - namespace: Catalog
+      name: EvidenceMenu
+      label: Evidence
+      icon: "mdi:file-check-outline"
+      order_weight: 2000
+      children:
+        data:
+          - namespace: Catalog
+            name: CoverageClaims
+            label: Coverage Claims
+            kind: CatalogCoverageClaim
+            icon: "mdi:link-variant"
+            order_weight: 1000
+          - namespace: Catalog
+            name: RequirementVerdicts
+            label: Requirement Verdicts
+            kind: CatalogRequirementVerdict
+            icon: "mdi:clipboard-check-outline"
+            order_weight: 2000
+          - namespace: Catalog
+            name: Sources
+            label: Sources
+            kind: CatalogSource
+            icon: "mdi:file-document-outline"
+            order_weight: 3000
+
+    # --------- What visitors send from the web app ---------
+    - namespace: Catalog
+      name: VisitorSubmissionsMenu
+      label: Visitor Submissions
+      icon: "mdi:inbox-arrow-down"
+      order_weight: 3000
+      children:
+        data:
+          - namespace: Catalog
+            name: AutomationStacks
+            label: Automation Stacks
+            kind: CatalogAutomationStack
+            icon: "mdi:layers-outline"
+            order_weight: 1000
+          - namespace: Catalog
+            name: UpdateSuggestions
+            label: Update Suggestions
+            kind: CatalogUpdateSuggestion
+            icon: "mdi:message-alert-outline"
+            order_weight: 2000
+
+    - namespace: Catalog
+      name: Reports
+      label: Reports
+      kind: CatalogReport
+      icon: "mdi:chart-bar"
+      order_weight: 4000

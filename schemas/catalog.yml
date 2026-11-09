@@ -8,7 +8,7 @@ nodes:
     description: A building block of the Network Automation Framework.
     label: Building Block
     icon: mdi:puzzle-outline
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - name__value
     order_by:
@@ -48,7 +48,7 @@ nodes:
     namespace: Catalog
     description: A company, foundation or open-source project that publishes products.
     icon: mdi:domain
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - name__value
     order_by:
@@ -75,7 +75,7 @@ nodes:
     namespace: Catalog
     description: A document that supports facts in the catalog.
     icon: mdi:file-document-outline
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - url__value
     order_by:
@@ -137,7 +137,7 @@ nodes:
     namespace: Catalog
     description: A network automation product.
     icon: mdi:package-variant-closed
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - publisher__name__value
       - name__value
@@ -244,7 +244,7 @@ nodes:
     description: States that a product covers a building block, with sources.
     label: Coverage Claim
     icon: mdi:link-variant
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - product__full_name__value
       - building_block__name__value
@@ -313,7 +313,7 @@ nodes:
     description: A MUST, SHOULD or MAY requirement of the Network Automation Framework, quoted from the framework.
     label: Requirement
     icon: mdi:format-list-checks
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - identifier__value
     order_by:
@@ -373,7 +373,7 @@ nodes:
     description: Whether a product meets one framework requirement for one building block it covers, with sources.
     label: Requirement Verdict
     icon: mdi:clipboard-check-outline
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - claim__name__value
       - requirement__identifier__value
@@ -426,7 +426,7 @@ nodes:
     namespace: Catalog
     description: A report about the whole catalog, built by Infrahub as an artifact.
     icon: mdi:chart-bar
-    include_in_menu: true
+    include_in_menu: false
     inherit_from:
       - CoreArtifactTarget
     human_friendly_id:
@@ -448,7 +448,7 @@ nodes:
     description: The products one visitor of the catalog web app uses. Not part of the public catalog.
     label: Automation Stack
     icon: mdi:layers-outline
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - reference__value
     order_by:
@@ -509,7 +509,7 @@ nodes:
     description: A visitor's suggestion that a product's facts are wrong or out of date. Maintainers apply it.
     label: Update Suggestion
     icon: mdi:message-alert-outline
-    include_in_menu: true
+    include_in_menu: false
     human_friendly_id:
       - reference__value
     order_by:

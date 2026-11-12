@@ -1,7 +1,7 @@
 # Beta deployment on an OVHcloud VPS
 
 One virtual machine runs the whole catalog with Docker Compose:
-- Infrahub 1.11.8, from the unchanged `docker-compose.yml` in the repository root;
+- Infrahub 1.12.1, from the unchanged `docker-compose.yml` in the repository root;
 - the catalog service (`frontend/api/Dockerfile`);
 - Caddy, which serves the built web app (`frontend/web/Dockerfile`), forwards `/api` to the
   catalog service and gets HTTPS certificates from Let's Encrypt.
@@ -110,6 +110,10 @@ uv run infrahubctl branch create load-catalog
 uv run infrahubctl object load --branch load-catalog objects/
 ```
 
+Infrahub 1.12 refuses to merge a branch while a required repository import has failed or is not
+complete. These steps were written on 1.11.8, and this step has not been run on 1.12.1: if the merge
+is refused because of the `error-import` status, the message names the repository.
+
 Open a proposed change from `load-catalog` to `main`. Wait for the checks: all must pass, and
 `catalog_coverage_check` lists the products with no coverage claim as warnings. Then merge it.
 
@@ -152,6 +156,31 @@ cd /opt/catalog && sudo git pull && sudo deploy/setup-vm.sh <your email>
 After a change to `checks/`, `queries/` or `.infrahub.yml`, also run **Import latest commit** on
 the repository in the deployed Infrahub. Open proposed changes keep the checks of the commit their
 branch was created from: rebase them to run the new checks.
+
+### Updating to a new Infrahub version
+
+When a change updates `docker-compose.yml` to a new Infrahub version, the database must be migrated
+before the new version starts. Infrahub requires each minor version in turn: 1.11 before 1.12.
+Read the release notes of the new version first.
+
+```bash
+ssh debian@<machine IPv4 address>
+cd /opt/catalog && sudo git pull
+sudo docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env down
+sudo docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env run --rm infrahub-server infrahub upgrade
+sudo docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env run --rm infrahub-server infrahub db showmigrations
+sudo deploy/setup-vm.sh <your email>
+```
+
+`infrahub upgrade` ends with `Upgrade complete SUCCESS`. In the output of `showmigrations`, every
+migration is marked `[X]`, and the database version is the target version. The upgrade lists the
+branches that need a rebase, for example `submission-*` branches with open proposed changes: rebase
+each one from its proposed change before merging it. Running `infrahub upgrade` on a database that
+is already up to date changes nothing.
+
+Before the 1.12.1 upgrade of the beta, the local instance was upgraded from 1.11.8 on 2026-11-12. The
+upgrade applied its migrations, and the six catalog checks passed in a proposed change. The upgrade
+listed four `submission-*` branches for a rebase.
 
 ## Switching on the stack review
 
@@ -203,12 +232,17 @@ looks the repository up as a `CoreRepository` and fails with `NodeNotFoundError`
 runs one worker with its copy on the `git_data` volume, and **Import latest commit** makes the copy.
 If the volume is ever deleted, run **Import latest commit** once, then **Retry** the checks.
 
+On Infrahub 1.12.1, the local instance ran all six checks of a proposed change with two task
+workers and no saved copy of the repository (2026-11-12). The deployment still runs one worker; this
+has not been changed or tested on the beta.
+
 ## Checks that time out
 
 On the 2 vCPU GCP machine used before, with one worker, the checks of a proposed change ran
 together and shared the SDK's request rate limit. A check that waits longer than 60 seconds is
-stopped (`TaskRunTimeoutError`), and Infrahub keeps showing it as "in progress". This is not a finding about
-the data. Rerun the checks from the proposed change (**Retry**, or the GraphQL mutation
+stopped (`TaskRunTimeoutError`). On Infrahub 1.11.8, Infrahub kept showing it as "in progress";
+Infrahub 1.11.10 fixed checks that stayed in progress after a run failed or timed out. This is not a
+finding about the data. Rerun the checks from the proposed change (**Retry**, or the GraphQL mutation
 `CoreProposedChangeRunCheck` with `check_type: USER`); on 2026-10-29 the rerun passed each time.
 
 ## Moving the deployment to another machine
@@ -243,7 +277,10 @@ new address afterwards.
    ```
 
 3. On the new machine, after step 1 of this README, install Docker without starting the stack,
-   import the data, then start the stack:
+   import the data, migrate it to the Infrahub version of `docker-compose.yml`, then start the
+   stack. When both machines run the same version, the migration changes nothing. When the new
+   version is higher, read "Updating to a new Infrahub version" first, including the rebase of
+   `submission-*` branches:
 
    ```bash
    ssh debian@<machine IPv4 address>
@@ -252,6 +289,7 @@ new address afterwards.
    cd /opt/catalog
    sudo deploy/setup-vm.sh --no-start <your email, for certificate notices>
    sudo deploy/import-data.sh /tmp/catalog-data.tar
+   sudo docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env run --rm infrahub-server infrahub upgrade
    sudo deploy/setup-vm.sh <your email, for certificate notices>
    rm /tmp/catalog-data.tar
    ```

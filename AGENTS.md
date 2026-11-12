@@ -8,7 +8,7 @@ routes back to it.
 
 This repository runs its own Infrahub instance with Docker Compose.
 
-- `docker-compose.yml` is the file from <https://infrahub.opsmill.io>, unchanged. It sets the Infrahub version (1.11.8).
+- `docker-compose.yml` is the file from <https://infrahub.opsmill.io>, unchanged. It sets the Infrahub version (1.12.1).
 - `docker-compose.override.yml` sets the project name `infrahub-product-catalog` and publishes only the Infrahub web server, on port 8100. Set `INFRAHUB_PORT` to use another port. Other Infrahub instances on this machine can then keep port 8000.
 - Start the instance with `docker compose up -d`, and stop it with `docker compose stop`. Do not pass `-p infrahub`: other stacks on this machine use that project name.
 

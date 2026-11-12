@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# Prepares a Debian 12 GCP virtual machine for the beta deployment, then starts the stack.
-# Run on the machine, from the repository root: sudo deploy/setup-vm.sh <email for HTTPS certificates>
+# Prepares a Debian 12 virtual machine for the beta deployment, then starts the stack.
+# Run on the machine, from the repository root:
 #
+#   sudo deploy/setup-vm.sh [--no-start] <email for HTTPS certificates>
+#
+# --no-start installs Docker and writes deploy/.env without starting the stack, so that the data of
+# another machine can be imported first (deploy/import-data.sh).
 # Running it again keeps deploy/.env and the beta password, and only rebuilds and restarts.
 set -euo pipefail
 
-ACME_EMAIL="${1:?usage: sudo deploy/setup-vm.sh <email for HTTPS certificates>}"
+START=1
+if [ "${1:-}" = "--no-start" ]; then
+  START=0
+  shift
+fi
+ACME_EMAIL="${1:?usage: sudo deploy/setup-vm.sh [--no-start] <email for HTTPS certificates>}"
 cd "$(dirname "$0")/.."
 
 # Docker from Docker's own Debian repository.
@@ -21,9 +30,8 @@ if ! command -v docker >/dev/null; then
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 
-# Host names built from the machine's external IP address, for example 34-1-2-3.sslip.io.
-IP=$(curl -fsS -H "Metadata-Flavor: Google" \
-  http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
+# Host names built from the machine's public IPv4 address, for example 51-1-2-3.sslip.io.
+IP=$(curl -4 -fsS https://api.ipify.org)
 SITE_HOST="${IP//./-}.sslip.io"
 
 secret() { openssl rand -hex 24; }
@@ -50,7 +58,12 @@ CATALOG_API_TOKEN=
 ENV
 fi
 
-docker compose -f docker-compose.yml -f deploy/docker-compose.gcp.yml --env-file deploy/.env up -d --build
+if [ "$START" = 0 ]; then
+  echo "Docker is installed and deploy/.env is written. The stack is not started."
+  exit 0
+fi
+
+docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env up -d --build
 
 echo
 echo "Web app:   https://${SITE_HOST}"

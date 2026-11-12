@@ -23,7 +23,7 @@ This repository runs its own Infrahub instance with Docker Compose.
 
 ## Git repository connection
 
-The instance reads this repository from GitHub as a read-only repository (`CoreReadOnlyRepository`, location `https://github.com/qduk/infrahub-product-catalog.git`, ref `main`). The registration is in `bootstrap/repository.yml`. See `dev/adr/0002-connect-repository-read-only.md`.
+The instance reads this repository from GitHub as a read-only repository (`CoreReadOnlyRepository`, location `https://github.com/opsmill-holt/naf-product-catalog.git`, ref `main`). The registration is in `bootstrap/repository.yml`. See `dev/adr/0002-connect-repository-read-only.md`.
 
 - `.infrahub.yml` lists checks and their queries, plus the coverage report transform and artifact. Infrahub runs these checks on every proposed change, and a failed check blocks the merge:
   - `catalog_source_check`: facts without a source, and sources due for review;

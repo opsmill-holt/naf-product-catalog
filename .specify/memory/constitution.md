@@ -102,7 +102,7 @@ them have passed unit tests and still failed against a running Infrahub server.
 - Commands that change data use the default admin API token from `docker-compose.yml`, set in
   `INFRAHUB_API_TOKEN`. This token MUST NOT be used outside the local instance.
 - Python 3.13 or later, with dependencies managed by uv in `pyproject.toml`.
-- The instance reads this repository from <https://github.com/qduk/infrahub-product-catalog>
+- The instance reads this repository from <https://github.com/opsmill-holt/naf-product-catalog>
   (`CoreReadOnlyRepository`, ref `main`, registered from `bootstrap/repository.yml`). Infrahub
   reads only pushed commits. After a change to `checks/`, `queries/` or `.infrahub.yml` is pushed,
   a maintainer MUST run **Import latest commit** on the repository.

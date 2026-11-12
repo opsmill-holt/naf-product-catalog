@@ -10,5 +10,5 @@ spec:
   kind: CoreReadOnlyRepository
   data:
     - name: infrahub-product-catalog
-      location: https://github.com/qduk/infrahub-product-catalog.git
+      location: https://github.com/opsmill-holt/naf-product-catalog.git
       ref: main

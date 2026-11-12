@@ -80,7 +80,7 @@ To check whether it is running: `gcloud compute instances describe catalog-beta 
 ```bash
 gcloud compute ssh catalog-beta
 sudo apt-get update && sudo apt-get install -y git
-sudo git clone https://github.com/qduk/infrahub-product-catalog.git /opt/catalog
+sudo git clone https://github.com/opsmill-holt/naf-product-catalog.git /opt/catalog
 cd /opt/catalog
 sudo deploy/setup-vm.sh <your email, for certificate notices>
 ```

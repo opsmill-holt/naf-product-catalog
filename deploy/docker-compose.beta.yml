@@ -1,8 +1,8 @@
 ---
-# Settings for the beta deployment on a GCP virtual machine. Used with the unmodified
+# Settings for the beta deployment on a virtual machine. Used with the unmodified
 # docker-compose.yml from the repository root, instead of docker-compose.override.yml:
 #
-#   docker compose -f docker-compose.yml -f deploy/docker-compose.gcp.yml --env-file deploy/.env up -d
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env up -d
 #
 # Only Caddy (the web service) is published. It serves the web app to anyone, and Infrahub's web
 # interface on its own host name behind Infrahub's login.

@@ -223,9 +223,10 @@ The site address changes, because it is built from the machine's IP address. Sen
 new address afterwards.
 
 1. On the old machine, update the repository and export the data. The export stops the stack, so
-   the site is down from here on:
+   the site is down from here on. A Spot VM may have been stopped by Google: start it first.
 
    ```bash
+   gcloud compute instances start catalog-beta
    gcloud compute ssh catalog-beta
    cd /opt/catalog && sudo git pull
    sudo deploy/export-data.sh /tmp/catalog-data.tar

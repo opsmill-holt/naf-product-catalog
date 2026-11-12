@@ -30,15 +30,14 @@ if ! command -v docker >/dev/null; then
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 fi
 
-# Host names built from the machine's public IPv4 address, for example 51-1-2-3.sslip.io.
-IP=$(curl -4 -fsS https://api.ipify.org)
-SITE_HOST="${IP//./-}.sslip.io"
-
 secret() { openssl rand -hex 24; }
 uuid() { cat /proc/sys/kernel/random/uuid; }
 
 # New Infrahub passwords, tokens and secret key, instead of the published defaults.
 if [ ! -f deploy/.env ]; then
+  # Host names built from the machine's public IPv4 address, for example 51-1-2-3.sslip.io.
+  IP=$(curl -4 -fsS https://api.ipify.org)
+  SITE_HOST="${IP//./-}.sslip.io"
   umask 077
   cat > deploy/.env <<ENV
 SITE_HOST=${SITE_HOST}
@@ -64,6 +63,8 @@ if [ "$START" = 0 ]; then
 fi
 
 docker compose -f docker-compose.yml -f deploy/docker-compose.beta.yml --env-file deploy/.env up -d --build
+
+SITE_HOST=$(grep '^SITE_HOST=' deploy/.env | cut -d= -f2)
 
 echo
 echo "Web app:   https://${SITE_HOST}"

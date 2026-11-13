@@ -21,6 +21,14 @@ spec:
           - building_block: Intent
             note: The README describes Infrahub as one source of truth for infrastructure data.
             sources: [https://github.com/opsmill/infrahub]
+          - building_block: Presentation
+            note: >-
+              Infrahub provides a web interface for its own data and for the review of proposed
+              changes. The sources do not describe it as an interface for the rest of an
+              automation system.
+            sources:
+              - https://docs.infrahub.app/overview
+              - https://docs.infrahub.app/proposed-changes/review-and-stamp
 
     - name: Ansible
       publisher: Red Hat
@@ -565,6 +573,13 @@ spec:
           in response to events is a secondary feature, not the main purpose.
         sources:
         - https://github.com/nautobot/nautobot
+      - building_block: Presentation
+        note: Nautobot provides a web interface for its own data and an approval dashboard for jobs and
+          other operations. The sources do not describe it as an interface for the rest of an automation
+          system.
+        sources:
+        - https://github.com/nautobot/nautobot
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/
   - name: Device42
     publisher: Freshworks
     description: Device42 discovers and maps IT infrastructure and application dependencies across data

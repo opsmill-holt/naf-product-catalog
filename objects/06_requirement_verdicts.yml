@@ -171,6 +171,12 @@ spec:
     - title: "Checks & Validation"
       url: https://docs.infrahub.app/checks/overview
       last_checked: "2026-10-23T00:00:00Z"
+    - title: "Infrahub permissions and roles"
+      url: https://docs.infrahub.app/deploy-manage/user-management/permissions-roles/overview
+      last_checked: "2026-11-13T00:00:00Z"
+    - title: "Infrahub single sign-on overview"
+      url: https://docs.infrahub.app/deploy-manage/user-management/sso/overview
+      last_checked: "2026-11-13T00:00:00Z"
     - title: "GraphQL overview"
       url: https://docs.infrahub.app/development-resources/graphql/overview
       last_checked: "2026-10-23T00:00:00Z"
@@ -279,6 +285,12 @@ spec:
     - title: "Version 1.3 - Nautobot Documentation"
       url: https://docs.nautobot.com/projects/core/en/stable/release-notes/version-1.3/
       last_checked: "2026-10-23T00:00:00Z"
+    - title: "Nautobot single sign-on"
+      url: https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/authentication/sso/
+      last_checked: "2026-11-13T00:00:00Z"
+    - title: "Nautobot permissions"
+      url: https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/guides/permissions/
+      last_checked: "2026-11-13T00:00:00Z"
     - title: "Nautobot change logging"
       url: https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/change-logging/
       last_checked: "2026-10-23T00:00:00Z"
@@ -3384,6 +3396,54 @@ spec:
     - claim: ["Network to Code Nautobot", "Orchestrator"]
       requirement: orchestrator-may-1
       verdict: not_shown
+    - claim: ["Network to Code Nautobot", "Presentation"]
+      requirement: framework-should-1
+      verdict: met
+      note: >-
+        The documentation states that jobs, configuration context data, configuration context
+        schemas and export templates can be stored in a Git repository that Nautobot clones and
+        syncs.
+      sources:
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/gitrepository/
+    - claim: ["Network to Code Nautobot", "Presentation"]
+      requirement: framework-should-2
+      verdict: met
+      note: >-
+        The release notes state that the REST API documentation at /api/docs/ uses the OpenAPI
+        3.0 format. Nautobot also has a GraphQL API.
+      sources:
+        - https://docs.nautobot.com/projects/core/en/stable/release-notes/version-1.3/
+    - claim: ["Network to Code Nautobot", "Presentation"]
+      requirement: presentation-must-1
+      verdict: met
+      note: >-
+        The documentation describes users, groups and object permissions that allow the view,
+        add, change and delete actions on a subset of objects selected by constraints. Users can
+        sign in through OAuth, OpenID Connect or SAML providers such as Google, Microsoft Azure
+        Active Directory and Okta, and Nautobot can set a user's groups from the provider at each
+        sign-in.
+      sources:
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/guides/permissions/
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/authentication/sso/
+    - claim: ["Network to Code Nautobot", "Presentation"]
+      requirement: presentation-may-1
+      verdict: met
+      note: >-
+        The documentation describes a web interface with an approval dashboard and forms to run
+        jobs. Jobs can also be run from the REST API and from the nautobot-server command line.
+      sources:
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/jobs/
+    - claim: ["Network to Code Nautobot", "Presentation"]
+      requirement: presentation-may-2
+      verdict: met
+      note: >-
+        The documentation states that users run jobs from forms in the web interface and view
+        their results, and that approvers approve or deny scheduled jobs, bulk edits and other
+        operations from the approval dashboard.
+      sources:
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/jobs/
+        - https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/
     - claim: ["Nokia Event-Driven Automation (EDA)", "Executor"]
       requirement: framework-should-1
       verdict: met
@@ -3711,6 +3771,54 @@ spec:
         - https://docs.infrahub.app/generators/overview
         - https://docs.infrahub.app/transformations/overview
         - https://docs.infrahub.app/overview
+    - claim: ["OpsMill Infrahub", "Presentation"]
+      requirement: framework-should-1
+      verdict: met
+      note: >-
+        The vendor states that a connected Git repository keeps schemas, transformations,
+        generators, checks and GraphQL queries under version control, and that the product has
+        built-in CI workflows and peer review.
+      sources:
+        - https://docs.infrahub.app/git-integration/overview
+        - https://docs.infrahub.app/overview
+    - claim: ["OpsMill Infrahub", "Presentation"]
+      requirement: framework-should-2
+      verdict: met
+      note: >-
+        The GraphQL API schema is generated from the core and user-defined schema and can be
+        downloaded per branch from the schema.graphql endpoint; a REST API is also documented.
+      sources:
+        - https://docs.infrahub.app/development-resources/graphql/overview
+        - https://docs.infrahub.app/overview
+    - claim: ["OpsMill Infrahub", "Presentation"]
+      requirement: presentation-must-1
+      verdict: met
+      note: >-
+        The documentation describes accounts, groups and roles, with global permissions and
+        object permissions for the create, update, remove and view actions, which can differ
+        between the default branch and other branches. Users can sign in through OpenID Connect
+        or OAuth 2.0 providers such as Microsoft Entra ID, Okta and Google Workspace.
+      sources:
+        - https://docs.infrahub.app/deploy-manage/user-management/permissions-roles/overview
+        - https://docs.infrahub.app/deploy-manage/user-management/sso/overview
+    - claim: ["OpsMill Infrahub", "Presentation"]
+      requirement: presentation-may-1
+      verdict: met
+      note: >-
+        The documentation describes a browser-based web interface with global search, a GraphQL
+        sandbox and API documentation, and a page where reviewers comment on and approve or
+        reject proposed changes.
+      sources:
+        - https://docs.infrahub.app/overview
+        - https://docs.infrahub.app/proposed-changes/review-and-stamp
+    - claim: ["OpsMill Infrahub", "Presentation"]
+      requirement: presentation-may-2
+      verdict: met
+      note: >-
+        The documentation states that reviewers comment on proposed changes in the web interface
+        and approve or reject them there.
+      sources:
+        - https://docs.infrahub.app/proposed-changes/review-and-stamp
     - claim: ["Paessler PRTG Network Monitor", "Collector"]
       requirement: framework-should-1
       verdict: not_shown

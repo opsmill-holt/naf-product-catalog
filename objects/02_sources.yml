@@ -12,6 +12,9 @@ spec:
     - title: opsmill/infrahub README
       url: https://github.com/opsmill/infrahub
       last_checked: "2026-10-20T00:00:00Z"
+    - title: "Infrahub: Review and stamp a proposed change"
+      url: https://docs.infrahub.app/proposed-changes/review-and-stamp
+      last_checked: "2026-11-13T00:00:00Z"
     - title: ansible/ansible README
       url: https://github.com/ansible/ansible
       last_checked: "2026-10-20T00:00:00Z"
@@ -163,6 +166,9 @@ spec:
   - title: 'Nautobot: github.com/nautobot/nautobot'
     url: https://github.com/nautobot/nautobot
     last_checked: '2026-10-21T00:00:00Z'
+  - title: Nautobot approval workflows
+    url: https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/
+    last_checked: '2026-11-13T00:00:00Z'
   - title: 'Device42: www.device42.com/company'
     url: https://www.device42.com/company/
     last_checked: '2026-10-21T00:00:00Z'
